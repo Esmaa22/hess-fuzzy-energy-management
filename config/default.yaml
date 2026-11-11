@@ -57,7 +57,7 @@ battery:                     # 14s22p NMC 18650 [1] + A-08, A-09, A-10
     cell_mass_kg: 0.0475
     cp: 900.0
     t_amb_c: 20.0
-    hA: 0.010                # [W/K] Adım 4'te sadece-batarya senaryosuyla kalibre edilecek
+    hA: 0.0846               # [W/K] calibrate_thermal.py: sadece-batarya ΔT = 2.1 °C (τ ≈ 505 s, h ≈ 20 W/m²K)
 
 supercap:                    # 18s15p, paket değerleri [1] (D-03, D-04)
   capacitance_f: 406.0

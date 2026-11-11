@@ -116,3 +116,11 @@ def test_supercap_limits(cfg):
     sc.reset(0.97)
     sc.step(-sc.max_charge_power(DT), DT)
     assert sc.soc == pytest.approx(1.0, abs=1e-6)
+
+
+def test_supercap_max_discharge_high_soc(cfg):
+    """Yüksek SoC'de sınır, maksimum güç aktarımı V²/(4·ESR) olmalı (enerji değil)."""
+    sc = Supercap(cfg)
+    for soc in [0.3, 0.6, 1.0]:
+        sc.reset(soc)
+        assert sc.max_discharge_power(DT) == pytest.approx(sc.voltage**2 / (4 * sc.esr))

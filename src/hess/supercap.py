@@ -42,11 +42,12 @@ class Supercap:
     # ---- güç sınırları (güvenlik katmanı D-06 bunları kullanır) ------------
     def max_discharge_power(self, dt: float) -> float:
         """SoC = 0'ın altına inmeden dt boyunca verilebilecek en büyük terminal gücü."""
-        p_int = max(self.energy - self.e_min, 0.0) / dt     # iç güç sınırı
+        p_int = max(self.energy - self.e_min, 0.0) / dt     # enerjiden gelen iç güç sınırı
         v = self.voltage
-        i = p_int / v
-        p_term = p_int - self.esr * i * i
-        return max(0.0, min(p_term, v * v / (4.0 * self.esr)))
+        # Akım hem enerji sınırıyla hem de maksimum güç aktarım noktası I = V/(2·ESR) ile
+        # sınırlıdır. Bu noktanın ötesinde akım artarsa terminal gücü azalır.
+        i = min(p_int / v, v / (2.0 * self.esr))
+        return max(0.0, v * i - self.esr * i * i)
 
     def max_charge_power(self, dt: float) -> float:
         """SoC = 1'i aşmadan dt boyunca kabul edilebilecek en büyük şarj gücü (pozitif değer)."""

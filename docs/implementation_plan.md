@@ -288,3 +288,38 @@ results/figures/, results/tables/
 ### Ayrıklaştırma notu
 - Güç, adımın ortalama hızıyla hesaplanıyor: v̄_k = (v_k + v_{k+1})/2, a_k = v_{k+1} − v_k.
 - Adım başı hızı v_k kullanılsaydı kapalı çevrimde −½·m·δ·Σ(Δv)² kadar sahte bir enerji kaybı oluşurdu. Orta nokta kullanımıyla kinetik enerji tam korunuyor (`tests/test_models.py`).
+
+### D-15: Sadece-batarya durumunda da dönüştürücü
+- Sadece-batarya durumunda da batarya aynı DC/DC dönüştürücüden (η_c = 0.96) geçer.
+- Gerekçe: Üç durum arasındaki fark yalnızca EMS'ten gelmeli. Dönüştürücü kaybı bir durumda olup diğerinde olmasaydı karşılaştırma adil olmazdı.
+- Makalede batarya dönüştürücüsü tek yönlü. Bu, HESS'te bataryanın frenlemede şarj edilmemesiyle (C_B = 0) tutarlı. E6'daki rejenerasyonlu varyant, karşılaştırma amacıyla çift yönlü kabul edilir.
+
+### D-16: Güvenlik katmanının uygulanışı ve işaret kuralı
+- Bara dengesi: P_dem = P_B,bus + P_SC,bus + P_mek. P_mek ≤ 0 ve yalnızca frenlemede oluşur.
+- EMS yalnızca süperkapasitörden istenen bara gücünü verir (`sc_request`). Güvenlik katmanı bu isteği iki sınıra göre kırpar:
+  - **Deşarj:** Akım, enerji sınırı ile maksimum güç aktarım noktasının (I = V/(2·ESR)) küçüğüyle sınırlanır.
+  - **Şarj:** SoC_SC ≤ 1 olacak şekilde sınırlanır.
+- Kalan çekiş gücü bataryadan gelir. Kalan fren gücü, izin varsa bataryaya, yoksa mekanik frene gider.
+
+### A-10 sonucu: Termal kalibrasyon
+- `calibrate_thermal.py`, sadece-batarya senaryosunda (rejenerasyonsuz, %100 → %20) ΔT = 2.1 °C veren değeri buldu: **hA = 0.0846 W/K/hücre**.
+  - Termal zaman sabiti τ ≈ 505 s.
+  - 18650 hücrenin yüzeyi ≈ 42 cm² olduğundan h ≈ 20 W/(m²·K), yani hafif hava soğutmasına karşılık gelen makul bir değer.
+- Bu değer bundan sonra **sabit**. FLC ve FRL sıcaklık sonuçları bu kalibrasyona göre öngörüdür, ayarlanmaz.
+
+### Bulgu: Makaledeki ECR tanımı
+- Makalenin değerleri: 41.59 Wh/km × (6540 s / 900 s × 12.4 km = 90.1 km) ≈ **3748 Wh ≈ paket enerjisinin tamamı**. Oysa %100'den %20'ye kadar paketin yalnızca %80'i harcanıyor.
+- Dolayısıyla makaledeki ECR fiilen **E_nominal / (%20'ye kadar gidilen mesafe)**. Menzil formülü (E_paket / ECR) de bu yüzden döngüsel: gidilen mesafeyi geri veriyor.
+- Ölçütler bu yüzden iki tanımla raporlanacak:
+  - **ECR (makale tanımı)** = E_nominal / mesafe
+  - **ECR (fiziksel)** = bataryadan çekilen terminal enerjisi / mesafe
+
+| Ölçüt (sadece batarya, rejenerasyonsuz) | Makale | Bizim model | Fark |
+|---|---|---|---|
+| Tepe akım | 132 A | 137.1 A | +%3.9 |
+| Deşarj süresi | 6540 s | 6755 s | +%3.3 |
+| ΔT (kalibrasyon hedefi) | 2.1 °C | 2.10 °C | – |
+| ECR (makale tanımı) | 41.59 Wh/km | 39.60 Wh/km | −%4.8 |
+| Menzil (makale tanımı) | 88.95 km | 93.81 km | +%5.5 |
+
+- **Sonuç:** A-17'de görülen %21'lik tüketim farkının büyük kısmı modelden değil, tanım farkından kaynaklanıyor. Aynı tanımla fark %5.

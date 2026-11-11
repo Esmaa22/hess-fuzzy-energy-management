@@ -1,0 +1,8 @@
+,Makale (sadece batarya),battery_only,battery_only_regen,Fark % (rejsiz vs makale)
+Tepe akım [A],132.000,137.135,137.059,3.890
+Deşarj süresi [s],6540.000,6755.000,7235.000,3.287
+ΔT [°C],2.100,2.100,2.168,0.011
+"ECR, makale tanımı [Wh/km]",41.590,39.595,37.260,-4.796
+"Menzil, makale tanımı [km]",88.950,93.811,99.690,5.465
+"ECR, fiziksel [Wh/km]",,32.910,30.904,
+Mesafe [km],,93.811,99.690,
