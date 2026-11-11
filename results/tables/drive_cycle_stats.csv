@@ -1,0 +1,7 @@
+stat,paper,generated,diff_pct,within_tol
+duration_s,900.000,900.000,0.000,True
+distance_km,12.400,12.400,-0.000,True
+avg_speed_kmh,49.600,49.600,-0.000,True
+max_speed_kmh,83.000,83.000,0.000,True
+max_accel_mps2,2.700,2.700,0.000,True
+max_decel_mps2,2.600,2.600,0.000,True

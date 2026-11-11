@@ -1,0 +1,72 @@
+# Tüm simülasyon parametreleri. Her değerin kaynağı docs/implementation_plan.md içindeki
+# varsayım (A-xx) / karar (D-xx) numarasıyla veya makale [1] tablosuyla belirtilmiştir.
+
+simulation:
+  dt: 1.0                    # [s] D-01
+  seed: 42                   # profil üretimi ve genel rastgelelik
+
+drive_cycle:                 # A-01: makaledeki istatistiklere uyan sentetik şehir içi profil
+  file: data/synthetic_urban_900s.csv
+  seed: 7
+  duration_s: 900
+  distance_km: 12.4
+  v_max_kmh: 83.0
+  a_max: 2.7                 # [m/s²] en yüksek ivme
+  d_max: 2.6                 # [m/s²] en yüksek yavaşlama (pozitif değer)
+  n_trips: 8                 # mikro-yolculuk sayısı
+  stop_s: [4, 12]            # duruş süresi aralığı [s]
+  accel_range: [1.2, 2.2]    # zorlanmayan yolculuklarda ivme aralığı [m/s²]
+  decel_range: [1.2, 2.2]
+  cruise_kmh: [45, 75]       # seyir hızı başlangıç aralığı (sonra mesafeye kalibre edilir)
+  tolerance: 0.03            # ±%3
+
+vehicle:                     # [1] Tablo 2 + A-02…A-07
+  mass_kg: 195.0             # A-02 (120 kg araç + 75 kg sürücü)
+  rot_mass_factor: 1.05      # A-04
+  frontal_area_m2: 0.88
+  drag_coeff: 0.22
+  rolling_coeff: 0.015       # A-03
+  air_density: 1.2
+  grade_rad: 0.0             # A-05
+  wheel_radius_m: 0.23
+  eta_transmission: 0.95
+  eta_motor: 0.90            # A-06
+  p_motor_max_w: 6200.0
+  regen_ratio: 0.20          # A-07
+  g: 9.81
+
+battery:                     # 14s22p NMC 18650 [1] + A-08, A-09, A-10
+  n_series: 14
+  n_parallel: 22
+  cell_capacity_ah: 3.35
+  cell_r_ohm: 0.030          # A-09
+  soc_min: 0.20
+  soc_init: 1.0
+  # A-08: tipik NMC OCV eğrisi (hücre başına), SoC → V
+  ocv_soc: [0.0, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00]
+  ocv_v:   [3.00, 3.30, 3.45, 3.55, 3.62, 3.67, 3.73, 3.82, 3.91, 4.00, 4.09, 4.20]
+  thermal:                   # A-10
+    cell_mass_kg: 0.0475
+    cp: 900.0
+    t_amb_c: 20.0
+    hA: 0.010                # [W/K] Adım 4'te sadece-batarya senaryosuyla kalibre edilecek
+
+supercap:                    # 18s15p, paket değerleri [1] (D-03, D-04)
+  capacitance_f: 406.0
+  v_max: 48.0
+  esr_ohm: 0.012
+  soc_init: 1.0
+
+converter:
+  eta: 0.96                  # D-05
+
+frl:                         # [1] + A-13…A-15, D-10…D-14
+  alpha: 0.1
+  gamma: 0.9
+  eps_start: 1.0
+  eps_decay: 0.995
+  eps_min: 0.01
+  episodes: 1000
+  actions: [-20, -10, 0, 10, 20]
+  init_soc_range: [0.30, 1.00]
+  seeds: [0, 1, 2, 3, 4]
