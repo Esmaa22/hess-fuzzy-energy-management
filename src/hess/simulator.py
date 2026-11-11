@@ -32,6 +32,9 @@ class EMS:
     def reset(self) -> None:  # bölüm başında çağrılır (FRL için)
         pass
 
+    def finish(self, soc_b: float, soc_sc: float) -> None:  # bölüm sonunda çağrılır (FRL için)
+        pass
+
     def sc_request(self, p_dem: float, soc_b: float, soc_sc: float) -> float:
         """Süperkapasitörden istenen bara gücü [W] (çekişte ≥ 0, frenlemede ≤ 0)."""
         raise NotImplementedError
@@ -94,34 +97,40 @@ class Simulator:
 
     # ---- çalıştırma --------------------------------------------------------
     def run(self, ems: EMS, soc_b: float = 1.0, soc_sc: float = 1.0,
-            max_cycles: int = 1, stop_at_soc_min: bool = True) -> SimResult:
+            max_cycles: int = 1, stop_at_soc_min: bool = True, log: bool = True) -> SimResult:
         """Profili en fazla `max_cycles` kez arka arkaya sürer.
 
         stop_at_soc_min=True ise SoC_B, soc_min'e inince durur (uzun deşarj testi, D-02).
+        log=False: adım kaydı tutulmaz (FRL eğitiminde hız için); log yalnızca son adımı içerir.
         """
         self.bat.reset(soc_b)
         self.sc.reset(soc_sc)
         ems.reset()
-        rows, t_end = [], None
+        rows, t_end, dist_m = [], None, 0.0
         soc_min = self.bat.soc_min
         for cyc in range(max_cycles):
             for k in range(self.n):
                 p = float(self.p_dem[k])
+                dist_m += self.v[k] * self.dt
                 p_b_bus, p_sc_bus, p_mech = self._arbitrate(ems, p)
                 rb = self.bat.step(self._to_source(p_b_bus), self.dt)
                 rs = self.sc.step(self._to_source(p_sc_bus), self.dt)
-                rows.append((cyc * self.n + k, cyc, self.v[k], p, p_b_bus, p_sc_bus, p_mech,
-                             rb["p_term"], rs["p_term"], rb["i"], rs["i"], rb["v_term"], rs["v"],
-                             rb["soc"], rs["soc"], rb["temp"], rb["p_loss"], rs["p_loss"]))
+                row = (cyc * self.n + k, cyc, self.v[k], p, p_b_bus, p_sc_bus, p_mech,
+                       rb["p_term"], rs["p_term"], rb["i"], rs["i"], rb["v_term"], rs["v"],
+                       rb["soc"], rs["soc"], rb["temp"], rb["p_loss"], rs["p_loss"])
+                if log or not rows:
+                    rows.append(row)
+                else:
+                    rows[0] = row
                 if stop_at_soc_min and self.bat.soc <= soc_min:
                     t_end = (cyc * self.n + k + 1) * self.dt
                     break
             if t_end is not None:
                 break
-        log = pd.DataFrame(rows, columns=[
+        ems.finish(self.bat.soc, self.sc.soc)
+        df = pd.DataFrame(rows, columns=[
             "t", "cycle", "v", "p_dem", "p_b_bus", "p_sc_bus", "p_mech",
             "p_b", "p_sc", "i_b", "i_sc", "v_b", "v_sc", "soc_b", "soc_sc", "temp_b",
             "loss_b", "loss_sc"])
-        log["t"] = log["t"] * self.dt
-        dist = float(log["v"].sum() * self.dt / 1000.0)
-        return SimResult(ems.name, log, t_end, dist)
+        df["t"] = df["t"] * self.dt
+        return SimResult(ems.name, df, t_end, dist_m / 1000.0)

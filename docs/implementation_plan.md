@@ -347,3 +347,41 @@ results/figures/, results/tables/
   - Makalenin 2–3. denklemlerinde Δt ve birimlerin eksik olması (§8.1-5) SC boşalmasının makalede gözden kaçmış olmasının olası bir açıklaması. Bu bir **hipotez**, doğrulanamıyor.
 - **Karar:** Baseline, makaleye sadık kalmak için **literal** bırakılıyor. Ölçütler hem ilk çevrim (E2) hem uzun deşarj (E1) için raporlanacak.
 - **Katkı adayı (Adım 6):** SoC_SC'yi sürdüren kural ve ödül tasarımı. Örnek: düşük SoC_SC'de SC payının 0'a inmesi, düşük güç talebinde bataryanın SC'yi şarj etmesi, ödüle SoC_SC terimi eklenmesi.
+
+### D-18: Q-learning'de eşitlik bozma
+- **Eğitimde:** Q değerleri eşit olan eylemler arasından rastgele seçim yapılır.
+- **Değerlendirmede:** Δ = 0 tercih edilir, yani hiç öğrenilmemiş bir durumda FLC kararına dönülür.
+- **Gerekçe:** `argmax` eşitlikte her zaman ilk eylemi (Δ = −20) seçer. Bu, öğrenilmemiş durumlarda sistematik bir yanlılık yaratırdı.
+- **Doğrulama:** Q tablosu sıfırken açgözlü FRL, FLC ile birebir aynı sonucu veriyor (`tests/test_frl.py`).
+
+### D-19: Ödülün hesaplanma zamanı ve kullanılan C değerleri
+- Ödül, bir sonraki adımda SoC_B(t+1) ve s′ bilindiğinde hesaplanır ve Q güncellemesi o anda yapılır. Bölüm sonunda bootstrap yapılmaz.
+- Ödülde EMS'in **karar verdiği** C_B ve C_SC kullanılır, güvenlik katmanı kırpmadan önceki değerler. Makalede ödül EMS katsayıları üzerinden tanımlı.
+- **Not:** Denklem 5'in 4. koşulu (C_SC = C_B → 0) hiçbir zaman tetiklenmez. C_SC = C_B = 50 durumu zaten 3. koşula (C_SC ≥ 50 → +0.5) girer.
+
+### Bulgu: Öğrenilen FRL politikası
+- **Eğitim:** 5 seed × 1000 bölüm, her seed ~280 s. Adım başına ortalama ödül −0.25'ten −0.08'e çıkıp plato yapıyor (`results/figures/frl_learning_curve.png`).
+- **Öğrenilen politika** (`results/tables/frl_policy.csv`):
+  - **SoC_SC = Low** → Δ = −10/−20, yani SC payı **azaltılıyor**.
+  - **SoC_SC = Medium/High** → Δ = +10/+20, yani SC payı artırılıyor.
+  - Rejenerasyon durumlarında Δ = 0, çünkü kural gereği (D-12) başka seçenek yok.
+- **Mekanizma:** Ödül fonksiyonunun monoton olmaması.
+  - SoC_SC Low iken FLC ≈ 75/25 verir; bu C_B ≥ 75 olduğu için −0.5 alır. Payı +20 artırmak 55/45 verir; bu −1 alır, yani daha kötü. 50'ye ulaşılamadığı için en iyi seçenek payı düşürmek. Bu da SC'yi korur.
+  - SoC_SC Medium iken 45 + 20 = 65 ≥ 50 olduğu için +0.5 alınır.
+  - Sonuç olarak ajan, **ödülde SoC_SC terimi olmamasına rağmen, dolaylı yoldan SC'yi koruyan bir aç-kapa (bang-bang) davranışı öğreniyor.**
+- Makalenin "düşük belirsizlikte FLC, yüksek belirsizlikte RL" yorumu desteklenmiyor. Ajan çekiş durumlarının neredeyse hiçbirinde Δ = 0 seçmiyor.
+
+| Ölçüt (sadece bataryaya göre) | Makale FLC | Makale FRL | Bizim FLC | Bizim FRL (5 seed ort. ± std) |
+|---|---|---|---|---|
+| Tepe I_B, ilk çevrim | −%22.7 | −%25.8 | −%26.3 | −%11.2 (103.9 ± 3.9 A) |
+| Tepe I_B, uzun deşarj | – | – | −%0.7 | −%3.1 (132.9 ± 4.4 A) |
+| RMS I_B, uzun deşarj | −%1.8 | −%10.6 | −%9.3 | −%9.6 |
+| ΔT, uzun deşarj | −%7.1 | −%9.5 | −%10.3 | −%12.2 |
+| Deşarj süresi | +%6.3 | +%6.9 | +%10.7 | +%10.5 (± 19 s) |
+| Ortalama SoC_SC, uzun deşarj | – | – | 0.05 | 0.16 |
+
+- **Yorum:**
+  - Uzun deşarjda FRL, tepe akım, RMS ve ΔT'de FLC'den biraz daha iyi, sıralama makaleyle aynı yönde. Ancak tepe akım farkı (3.3 A) seed'ler arası standart sapmanın (4.4 A) altında, bu yüzden **istatistiksel olarak ayırt edilemez**.
+  - İlk çevrimde FRL, FLC'den **kötü**. SC dolu olsa bile Low durumlara düştüğünde payı kısıyor.
+  - Makaledeki "FRL her ölçütte FLC'den iyi" sonucu bizim kurulumumuzda yalnızca kısmen ve küçük farklarla yeniden üretiliyor.
+- **Katkı için anlamı:** Ödülün monoton hale getirilmesi ve SoC_SC teriminin eklenmesi, şu an yan etki olarak ortaya çıkan SC koruma davranışını açık ve kontrol edilebilir hale getirir.
