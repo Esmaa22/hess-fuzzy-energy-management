@@ -385,3 +385,66 @@ results/figures/, results/tables/
   - İlk çevrimde FRL, FLC'den **kötü**. SC dolu olsa bile Low durumlara düştüğünde payı kısıyor.
   - Makaledeki "FRL her ölçütte FLC'den iyi" sonucu bizim kurulumumuzda yalnızca kısmen ve küçük farklarla yeniden üretiliyor.
 - **Katkı için anlamı:** Ödülün monoton hale getirilmesi ve SoC_SC teriminin eklenmesi, şu an yan etki olarak ortaya çıkan SC koruma davranışını açık ve kontrol edilebilir hale getirir.
+
+---
+
+## 11. Yeniden Üretim Sonuçları (Adım 4.6, CP3)
+
+Betik: `experiments/baseline/run_reproduction.py`, toplam ~12 s.
+
+Üretilen dosyalar:
+- **Tablolar:** `results/tables/E1_long_discharge.csv`, `E2_first_cycle.csv`, `reproduction_relative.csv`, `reproduction_ranking.csv`
+- **Grafikler:** `results/figures/E1_long_discharge.png`, `E1_current.png`, `E2_power_split.png`, `E3_soc_sc.png`, `reproduction_summary.png`
+
+### 11.1 Sadece bataryaya göre değişim
+
+| Ölçüt | Makale FLC | FLC, ilk çevrim | FLC, uzun deşarj | Makale FRL | FRL, ilk çevrim | FRL, uzun deşarj |
+|---|---|---|---|---|---|---|
+| Tepe I_B | −22.7 | −26.3 | −0.7 | −25.8 | −11.2 | −3.1 |
+| RMS I_B | −1.8 | −27.8 | −9.3 | −10.6 | −20.7 | −9.6 |
+| I²t | −9.6 | −47.9 | −9.0 | −20.0 | −37.2 | −9.7 |
+| ΔT | −7.1 | −43.2 | −10.3 | −9.5 | −29.0 | −12.2 |
+| Deşarj süresi | +6.3 | – | +10.7 | +6.9 | – | +10.5 |
+
+FRL değerleri 5 seed'in ortalaması. Tüm değerler yüzde.
+
+### 11.2 Sıralama kontrolü (makale: FRL > FLC > sadece batarya)
+- **Uzun deşarj, akım ve sıcaklık ölçütleri:** Sıralama makaleyle aynı. Ancak FRL ile FLC arasındaki fark, seed'ler arası standart sapmanın yalnızca **0.5–1.3 katı**, yani anlamlı değil.
+- **Uzun deşarj, deşarj süresi ve menzil:** FLC ≥ FRL. Fark 0.55 std, yani pratikte eşit.
+- **İlk çevrim:** Sıralama FLC > FRL > sadece batarya. FLC'nin üstünlüğü **4.2–4.6 std**, yani anlamlı.
+
+### 11.3 E6: Adil baseline (sadece batarya + rejenerasyon)
+- Rejenerasyonlu sadece-batarya senaryosu, makalenin baseline'ına (rejenerasyonsuz) göre deşarj süresini **+%7.1** uzatıyor: 6755 s → 7235 s.
+- Bu adil baseline'a göre FLC ve FRL'nin deşarj süresi kazancı yalnızca **+%3.2–3.3**. Makale tanımıyla hesaplanan menzil kazancı da benzer.
+- **Sonuç:** Makalenin raporladığı menzil ve deşarj süresi kazancının yaklaşık **üçte ikisi süperkapasitörden değil, rejeneratif frenlemenin açılmasından** geliyor.
+- Akım ölçütlerinde fark yok. Rejenerasyon tepe ve RMS akımı değiştirmiyor; sadece I²t'yi şarj akımları nedeniyle biraz artırıyor.
+
+### 11.4 FRL'nin süperkapasitör kullanımı (E2, E3)
+- FRL, SoC_SC'yi Low/Medium sınırında (%15–30) tutuyor; FLC'de süperkapasitör sıfıra iniyor.
+- Ancak bu bantta durum "Low" olduğu için FRL, SC payını Δ = −20 ile neredeyse sıfıra çekiyor. Sonuç: **SC'de enerji korunuyor ama tepe akımları karşılamak için kullanılmıyor**. E2'de ~230. saniyeden sonra P_SC ≈ 0.
+- Uzun deşarjda tepe akımdaki azalmanın küçük kalmasının (−%3.1) nedeni bu.
+
+### 11.5 Makaleyle uyuşan ve uyuşmayanlar
+- **Uyuşan:**
+  - SC dolu iken tepe akım azalması: FLC −%26.3, makale −%22.7.
+  - Uzun deşarjda RMS, ΔT ve deşarj süresi değişimlerinin yönü ve büyüklük mertebesi.
+  - Uzun deşarjda akım ve sıcaklık ölçütlerinde sıralamanın yönü.
+- **Uyuşmayan:**
+  - Uzun deşarjda tepe akım azalması (makale ~%23–26, bizde %1–3).
+  - FRL'nin ilk çevrimde FLC'den kötü olması.
+- **Olası nedenler:**
+  - Literal kural tabanı SC enerjisini sürdürmüyor.
+  - Ödül fonksiyonu monoton değil ve SoC_SC içermiyor.
+  - Makalede tepe akımın hangi pencerede ölçüldüğü belirtilmemiş.
+- **Makalenin iç tutarsızlıkları** yeniden üretimde de görülüyor:
+  - Ortalama |I| > RMS olması imkânsız. Bizde ortalama |I| 31 A, RMS 48 A.
+  - Menzil formülü döngüsel.
+
+### 11.6 Hesaplama maliyeti
+- EMS karar süresi: sadece batarya ~0.1 µs, FLC ~91 µs, FRL ~172 µs (adım başına, Python).
+- 1 s'lik kontrol adımına göre ihmal edilebilir. FRL'nin maliyeti, FLC çıkarımı + durum hesabı (3 ek bulanıklaştırma) + Q tablosuna erişimden geliyor.
+
+### 11.7 Katkı için çıkarımlar (Adım 6'ya girdi)
+1. **SC enerji yönetimi:** SC ne tamamen tüketilmeli (FLC) ne de atıl tutulmalı (FRL). Örneğin yalnızca yüksek güç talebinde kullanılıp düşük talepte bataryadan yeniden şarj edilebilir.
+2. **Ödülün düzeltilmesi:** Monoton hale getirilmeli, SoC_SC terimi ve tepe akım / di/dt cezası eklenmeli. Böylece şu an yan etki olarak ortaya çıkan koruma davranışı açık ve kontrol edilebilir hale gelir.
+3. **Adil baseline (E6) ve seed'li raporlama:** Kazançların gerçek kaynağını ve anlamlılığını göstermek için standart hale getirilmeli.

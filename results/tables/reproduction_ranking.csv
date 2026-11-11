@@ -1,0 +1,11 @@
+Ölçüt,Koşul,Sıralama (iyi→kötü),Makaleyle aynı,|FRL−FLC| / std(FRL)
+Tepe I_B [A],ilk çevrim,FLC > FRL > Sadece batarya,False,4.56
+Tepe I_B [A],uzun deşarj,FRL > FLC > Sadece batarya,True,0.74
+RMS I_B [A],ilk çevrim,FLC > FRL > Sadece batarya,False,4.56
+RMS I_B [A],uzun deşarj,FRL > FLC > Sadece batarya,True,0.54
+I²t [A²s],ilk çevrim,FLC > FRL > Sadece batarya,False,4.39
+I²t [A²s],uzun deşarj,FRL > FLC > Sadece batarya,True,0.75
+Sıcaklık artışı [°C],ilk çevrim,FLC > FRL > Sadece batarya,False,4.20
+Sıcaklık artışı [°C],uzun deşarj,FRL > FLC > Sadece batarya,True,1.26
+Deşarj süresi %100→%20 [s],uzun deşarj,FLC > FRL > Sadece batarya,False,0.55
+"Menzil, makale tanımı [km]",uzun deşarj,FLC > FRL > Sadece batarya,False,0.55
