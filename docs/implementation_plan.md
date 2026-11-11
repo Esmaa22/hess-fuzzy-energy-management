@@ -323,3 +323,27 @@ results/figures/, results/tables/
 | Menzil (makale tanımı) | 88.95 km | 93.81 km | +%5.5 |
 
 - **Sonuç:** A-17'de görülen %21'lik tüketim farkının büyük kısmı modelden değil, tanım farkından kaynaklanıyor. Aynı tanımla fark %5.
+
+### D-17: Çıktı evreninin genişletilmesi (centroid sınır yanlılığı)
+- **Sorun:** Çıktı evreni [0, 100] alınırsa, 0 ve 100'de merkezli üçgenlerin yarısı evrenin dışında kalır. Bu durumda tek bir "100/0" kuralı ateşlense bile centroid 0 yerine ≈1.7, 100 yerine ≈98.3 verir.
+- **Çözüm:** Evren [−5, 105] alınır (1101 nokta, 0.1 adım) ve sonuç [0, 100]'e kırpılır.
+- **Doğrulama:** `tests/test_fuzzy.py`. 36 kuralın her biri, tek başına tam ateşlendiği noktada Tablo 5'teki değeri birebir üretiyor.
+
+### Bulgu: Literal kural tabanında süperkapasitör boşalıyor
+- **Gözlem:** FLC uzun deşarjda çalıştırıldığında SoC_SC ilk ~1070 s'de %5'in altına iniyor ve deşarj boyunca ortalaması 0.05'te kalıyor.
+  - Toplamda SC 296 Wh veriyor, rejenerasyondan 206 Wh alıyor.
+  - Çekişteki payın tüm deşarj boyunca sürdürülmesi ~1500 Wh gerektirirdi. SC'nin kullanılabilir enerjisi ise yalnızca 97 Wh.
+- **Neden:** Tablo 5'te SoC_SC = Low iken bile süperkapasitöre %25 pay veriliyor (örneğin SoC_B Medium → 75/25). Bataryanın süperkapasitörü şarj ettiği bir kural yok. Tek şarj kaynağı %20'lik rejenerasyon. Kural tabanı enerji dengesini korumuyor.
+- **Sonuç:** Etki, ölçümün ne zaman yapıldığına bağlı:
+
+  | Ölçüt (FLC, sadece bataryaya göre) | Makale | Bizim model, ilk çevrim (SC dolu) | Bizim model, uzun deşarj |
+  |---|---|---|---|
+  | Tepe I_B | −%22.7 | **−%26.3** | −%0.7 |
+  | RMS I_B | −%1.8 | – | −%9.3 |
+  | Deşarj süresi | +%6.3 | – | +%10.7 |
+  | ΔT | −%7.1 | – | −%10.3 |
+
+- **Yorum:** Makalenin tepe akımdaki azalması, süperkapasitör dolu olduğu sürece yeniden üretiliyor. Uzun deşarjda tepe akım, SC boşaldıktan sonra ve batarya gerilimi düşükken oluşuyor, bu yüzden azalma kayboluyor.
+  - Makalenin 2–3. denklemlerinde Δt ve birimlerin eksik olması (§8.1-5) SC boşalmasının makalede gözden kaçmış olmasının olası bir açıklaması. Bu bir **hipotez**, doğrulanamıyor.
+- **Karar:** Baseline, makaleye sadık kalmak için **literal** bırakılıyor. Ölçütler hem ilk çevrim (E2) hem uzun deşarj (E1) için raporlanacak.
+- **Katkı adayı (Adım 6):** SoC_SC'yi sürdüren kural ve ödül tasarımı. Örnek: düşük SoC_SC'de SC payının 0'a inmesi, düşük güç talebinde bataryanın SC'yi şarj etmesi, ödüle SoC_SC terimi eklenmesi.

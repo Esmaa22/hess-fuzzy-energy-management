@@ -68,6 +68,26 @@ supercap:                    # 18s15p, paket değerleri [1] (D-03, D-04)
 converter:
   eta: 0.96                  # D-05
 
+flc:                         # plan §4: A-11, A-12, D-08, D-09, D-17
+  # Girdi üyelik fonksiyonları, yamuk (a, b, c, d). SoC [%], P_dem [W]. Ruspini bölümlemesi.
+  soc_terms:
+    Low:    [0, 0, 20, 40]
+    Medium: [20, 40, 60, 80]
+    High:   [60, 80, 100, 100]
+  p_terms:
+    Regeneration: [-5100, -5100, -100, 0]
+    Low:          [0, 0, 1000, 2000]
+    Medium:       [1000, 2000, 3000, 4000]
+    High:         [3000, 4000, 5600, 5600]
+  p_range: [-5100, 5600]     # P_dem bu aralığa kırpılır
+  # Çıktılar: her seviye için o değer merkezli ±halfwidth üçgen (A-12)
+  cb_levels:  [0, 40, 55, 65, 70, 75, 100]
+  csc_levels: [0, 20, 25, 30, 35, 45, 60]
+  out_halfwidth: 5
+  out_universe: [-5, 105]    # D-17: centroid sınır yanlılığını önlemek için genişletilmiş evren
+  universe_points: 1101      # 0.1 adım
+  regen_csc_ref: 20          # D-09: frenlemede kabul oranı = C_SC / 20
+
 frl:                         # [1] + A-13…A-15, D-10…D-14
   alpha: 0.1
   gamma: 0.9
