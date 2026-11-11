@@ -1,6 +1,8 @@
 """Sentetik sürüş profilini üretir, CSV ve grafik olarak kaydeder, istatistikleri doğrular.
 
-Kullanım:  python experiments/baseline/make_drive_cycle.py
+Kullanım:
+    python experiments/baseline/make_drive_cycle.py              # config'teki genlikle üret
+    python experiments/baseline/make_drive_cycle.py --calibrate  # genliği tüketim hedefine kalibre et
 """
 
 import sys
@@ -15,10 +17,37 @@ import matplotlib.pyplot as plt
 
 from hess import ROOT, load_config
 from hess.drive_cycle import PAPER_STATS, generate_urban_profile, profile_stats
+from hess.vehicle import Vehicle, demand_from_profile
+
+
+def ecr_no_regen(cfg: dict, df) -> float:
+    """Sadece-batarya tüketimi (makaledeki tanım): rejenerasyonsuz P_dem / η_c / km [Wh/km]."""
+    d = demand_from_profile(Vehicle(cfg), df)
+    p = d["p_dem"]
+    dt = cfg["simulation"]["dt"]
+    e_wh = p[p > 0].sum() * dt / 3600 / cfg["converter"]["eta"]
+    return e_wh / (d["v_mid"].sum() * dt / 1000)
+
+
+def calibrate(cfg: dict) -> float:
+    """micro_amp_mps'i bisection ile tüketim hedefine eşler."""
+    target = cfg["drive_cycle"]["target_ecr_whkm"]
+    lo, hi = 0.0, 4.0
+    for _ in range(40):
+        mid = 0.5 * (lo + hi)
+        if ecr_no_regen(cfg, generate_urban_profile(cfg, micro_amp=mid)) < target:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
 
 
 def main() -> None:
     cfg = load_config()
+    if "--calibrate" in sys.argv:
+        amp = calibrate(cfg)
+        print(f"Kalibre edilen micro_amp_mps = {amp:.3f}  -> config/default.yaml'a yazın")
+        cfg["drive_cycle"]["micro_amp_mps"] = round(amp, 3)
     df = generate_urban_profile(cfg)
     out = ROOT / cfg["drive_cycle"]["file"]
     df.to_csv(out, index=False, float_format="%.4f")
@@ -34,6 +63,8 @@ def main() -> None:
         rows.append((k, ref, s[k], 100 * diff, ok))
         print(f"{k:<16}{ref:>10.2f}{s[k]:>12.2f}{100*diff:>9.2f}  {'OK' if ok else 'HATA'}")
     print(f"Duruşta geçen süre oranı: %{100*s['stop_fraction']:.1f}")
+    ecr = ecr_no_regen(cfg, df)
+    print(f"Sadece-batarya tüketimi: {ecr:.2f} Wh/km (hedef {cfg['drive_cycle']['target_ecr_whkm']})")
 
     # Tablo
     tbl = ROOT / "results" / "tables" / "drive_cycle_stats.csv"

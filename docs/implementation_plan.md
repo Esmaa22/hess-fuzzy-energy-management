@@ -267,3 +267,24 @@ results/figures/, results/tables/
 | Makaledeki ödül fonksiyonu ajanı süperkapasitörü tüketmeye itebilir | Literal uygulama korunuyor, gözlenen davranış raporlanacak ve katkının gerekçesi olacak. |
 | FRL'nin FLC'ye göre kazancı çok küçük çıkabilir (makalede de ~%0.6–4) | 5 seed ile ortalama ± std raporlanacak, farkın gürültüden büyük olup olmadığı tartışılacak. |
 | Sıcaklık modeli kalibrasyona bağlı | Yalnızca göreli değişim yorumlanacak, sınırlılıklar bölümünde belirtilecek. |
+
+---
+
+## 10. Uygulama Sırasında Eklenen Varsayımlar ve Kararlar (Adım 4)
+
+### A-17: Seyirde mikro hız dalgalanması
+- **Gözlem:** Pürüzsüz sentetik profilde (yalnızca rampalar ve sabit seyir) sadece-batarya tüketimi **24.7 Wh/km** çıktı. Makaledeki değer **41.59 Wh/km**, yani fark %40.
+- **Neden:** Makaledeki profil, gerçek bir sürüşün telefonla yapılmış 1 Hz kaydı. Böyle kayıtlarda sürekli küçük hızlanma ve yavaşlamalar bulunur. Frenlemede enerjinin yalnızca %20'si geri kazanıldığı (A-07) için bu salınımlar tüketimi artırır. HESS'in bastırmaya çalıştığı akım tepeleri de bu salınımlardan gelir.
+- **Uygulama:** Seyir bölümlerine AR(1) gürültüsü eklendi: x_k = φ·x_{k−1} + ε_k. Gürültü bir zarfla çarpılarak seyrin iki ucunda sıfıra indiriliyor. Ardışık hız farkı ±1.8 m/s² ile sınırlı. Profilin 6 istatistiği yine birebir tutuyor.
+- **Parametre seçimi (φ = 0.5, genlik = 1.0 m/s):** Seyirde RMS ivme 0.83 m/s², hız sapması yaklaşık ±3.5 km/h. Tüketim **32.9 Wh/km**, kalan fark %21.
+  - Makaleye tam eşleşme (φ = 0.3, genlik 2.05 m/s → 41.2 Wh/km) mümkün. Ancak bu, seyrin %30'unda |a| > 1.5 m/s² olan, gerçekçi olmayan sert bir sürüş gerektiriyor ve süperkapasitörün faydasını olduğundan büyük gösterebilir. Bu yüzden seçilmedi.
+  - Tam eşleşme `make_drive_cycle.py --calibrate` ile yeniden üretilebilir. Duyarlılık analizi için kullanılabilir.
+- **Sonuç:** Kalan %21'lik fark Limitations bölümünde raporlanacak. Karşılaştırma, planlandığı gibi göreli değişimler üzerinden yapılacak.
+
+### A-08 ek: Nominal ve fiziksel paket enerjisi
+- OCV eğrisinden hesaplanan fiziksel enerji **3.87 kWh** (ortalama V_oc ≈ 3.75 V/hücre). Makaledeki **3.7 kWh** ise nominal gerilimle hesaplanmış: 73.7 Ah × 14 × 3.6 V = 3.71 kWh.
+- Simülasyon fiziksel modeli kullanıyor. Menzil formülünde (E_paket / ECR) makaleyle aynı tanımda kalmak için **nominal enerji (3.71 kWh)** kullanılıyor.
+
+### Ayrıklaştırma notu
+- Güç, adımın ortalama hızıyla hesaplanıyor: v̄_k = (v_k + v_{k+1})/2, a_k = v_{k+1} − v_k.
+- Adım başı hızı v_k kullanılsaydı kapalı çevrimde −½·m·δ·Σ(Δv)² kadar sahte bir enerji kaybı oluşurdu. Orta nokta kullanımıyla kinetik enerji tam korunuyor (`tests/test_models.py`).

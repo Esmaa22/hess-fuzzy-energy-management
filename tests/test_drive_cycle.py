@@ -29,10 +29,10 @@ def test_deterministic():
     np.testing.assert_array_equal(a, b)
 
 
-def test_no_accel_spikes_in_cruise(profile):
-    # Rampalar dışında |a| küçük olmalı: ivme ya rampa değeri ya da < 0.2 m/s²
+def test_micro_fluctuation_bounded(profile):
+    """Seyir dalgalanması ivme uç değerlerini aşmamalı ve gerçekçi düzeyde kalmalı (A-17)."""
+    v = profile["speed_kmh"].to_numpy()
     a = profile["accel_mps2"].to_numpy()
-    small = np.abs(a) < 0.2
-    ramp = np.abs(a) >= 1.0
-    # ara değerler yalnızca rampanın son (kısmi) adımında görülebilir
-    assert (small | ramp).mean() > 0.97
+    cruise = v > 30
+    assert a.max() <= 2.7 + 1e-9 and a.min() >= -2.6 - 1e-9
+    assert np.sqrt(np.mean(a[cruise] ** 2)) < 1.0

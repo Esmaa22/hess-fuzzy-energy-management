@@ -1,0 +1,12 @@
+,value
+Tepe çekiş gücü [W],6200.00
+Tepe rejenerasyon gücü [W],-1602.17
+Motor sınırına takılan adım sayısı,36.00
+Çekiş enerjisi / çevrim [Wh],391.48
+Geri kazanılan enerji / çevrim [Wh],26.20
+Net DC enerji tüketimi [Wh/km],29.46
+Rejenerasyonsuz tüketim [Wh/km],31.57
+Batarya nominal enerjisi [Wh],3714.48
+SC kullanılabilir enerjisi [Wh],97.44
+"Kaba menzil, rejenerasyonsuz [km]",117.65
+FLC evreni dışında kalan adım (P>5600 W),49.00

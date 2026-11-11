@@ -19,6 +19,13 @@ drive_cycle:                 # A-01: makaledeki istatistiklere uyan sentetik şe
   decel_range: [1.2, 2.2]
   cruise_kmh: [45, 75]       # seyir hızı başlangıç aralığı (sonra mesafeye kalibre edilir)
   tolerance: 0.03            # ±%3
+  # A-17: seyirde mikro dalgalanma (AR(1)). Genlik gerçekçilik ölçütüyle seçildi
+  # (seyirde RMS ivme ≈ 0.8 m/s², hız sapması ≈ ±3.5 km/h). Makalenin tüketimine tam
+  # eşleşme (amp ≈ 2.05, φ = 0.3) gerçekçi olmayan sert bir sürüş gerektirdiği için seçilmedi.
+  micro_amp_mps: 1.0         # [m/s]
+  micro_phi: 0.5             # AR(1) katsayısı (≈ 1.4 s korelasyon süresi)
+  micro_a_lim: 1.8           # [m/s²] dalgalanmada ardışık hız farkı sınırı (< 2.6 / 2.7)
+  target_ecr_whkm: 41.59     # [1] Tablo 8, sadece batarya (yalnızca referans; --calibrate tam eşleşmeyi bulur)
 
 vehicle:                     # [1] Tablo 2 + A-02…A-07
   mass_kg: 195.0             # A-02 (120 kg araç + 75 kg sürücü)
@@ -40,6 +47,7 @@ battery:                     # 14s22p NMC 18650 [1] + A-08, A-09, A-10
   n_parallel: 22
   cell_capacity_ah: 3.35
   cell_r_ohm: 0.030          # A-09
+  nominal_cell_v: 3.6        # makaledeki 3.7 kWh = 73.7 Ah × 14 × 3.6 V (menzil hesabında kullanılır)
   soc_min: 0.20
   soc_init: 1.0
   # A-08: tipik NMC OCV eğrisi (hücre başına), SoC → V
