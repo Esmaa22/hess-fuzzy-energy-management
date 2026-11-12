@@ -448,3 +448,31 @@ FRL değerleri 5 seed'in ortalaması. Tüm değerler yüzde.
 1. **SC enerji yönetimi:** SC ne tamamen tüketilmeli (FLC) ne de atıl tutulmalı (FRL). Örneğin yalnızca yüksek güç talebinde kullanılıp düşük talepte bataryadan yeniden şarj edilebilir.
 2. **Ödülün düzeltilmesi:** Monoton hale getirilmeli, SoC_SC terimi ve tepe akım / di/dt cezası eklenmeli. Böylece şu an yan etki olarak ortaya çıkan koruma davranışı açık ve kontrol edilebilir hale gelir.
 3. **Adil baseline (E6) ve seed'li raporlama:** Kazançların gerçek kaynağını ve anlamlılığını göstermek için standart hale getirilmeli.
+
+### 11.8 E4: DC/DC verim taraması (Adım 5)
+- **Betik:** `experiments/baseline/run_e4_dcdc.py`, ~80 s.
+- **Çıktılar:** `results/tables/E4_dcdc_sweep.csv`, `E4_ranking.csv`, `results/figures/E4_dcdc_sweep.png`.
+- **Kurulum:**
+  - η_c = 0.91…1.00, 0.01 adımla, iki dönüştürücüye birlikte uygulanıyor.
+  - Uzun deşarj, dört senaryo.
+  - FRL Q tabloları η_c = 0.96'da eğitildi ve yeniden eğitilmedi; yalnızca tesis verimi değişiyor.
+
+| η_c | Sadece batarya | Batarya + rej. (E6) | FLC | FRL (5 seed) |
+|---|---|---|---|---|
+| 0.91 | 88.71 | 93.68 | 97.01 | 96.91 |
+| 0.96 | 93.81 | 99.69 | 103.11 | 102.95 |
+| 1.00 | 97.80 | 104.53 | 107.87 | 107.79 |
+
+Menzil makale tanımıyla, km cinsinden.
+
+- **HESS > sadece batarya sıralaması:** Tüm η_c değerlerinde korunuyor. Bu, makalenin Şekil 14'teki ana iddiasıyla uyumlu.
+  - FLC'nin sadece bataryaya göre menzil kazancı %9.4'ten %10.3'e çıkıyor, yani hafifçe artıyor.
+- **FRL > FLC sıralaması yeniden üretilemedi.**
+  - Menzilde 10 noktanın 10'unda FLC ≥ FRL. Deşarj süresinde 10 noktanın 9'unda FLC ≥ FRL.
+  - Fark her noktada 0.7 std'nin altında. İki yöntem istatistiksel olarak ayırt edilemiyor; bu §11.2 ile tutarlı.
+- **Verime duyarlılık:**
+  - HESS menzili η_c'nin her %1'i için ~1.21 km değişiyor, sadece batarya ~1.01 km.
+  - Mutlak duyarlılık HESS'te daha yüksek, çünkü daha uzun mesafede daha fazla toplam enerji dönüştürücüden geçiyor. SC'ye giden enerji de iki kez dönüştürülüyor (şarj + deşarj).
+  - Göreli duyarlılık ikisinde de yaklaşık %1.1 / %1.
+- **E6'ya göre kazanç:** FLC'nin adil baseline'a göre menzil kazancı tüm aralıkta %3.1–3.6'da kalıyor. §11.3'teki "kazancın ~2/3'ü rejenerasyondan" bulgusu verimden bağımsız.
+- **Sınırlılık:** FRL her η_c için yeniden eğitilseydi politika biraz farklı olabilirdi. Ancak §11.4'teki SC'yi kısma davranışı ödül yapısından kaynaklandığı için sıralamanın değişmesi beklenmiyor.

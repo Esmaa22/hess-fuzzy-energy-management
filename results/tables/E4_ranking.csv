@@ -1,0 +1,11 @@
+eta,sıralama_t_dis,makaleyle_aynı_t_dis,(FRL−FLC)/std_t_dis,FLC_vs_E6_%_t_dis,FLC_vs_bat_%_t_dis,sıralama_range_paper,makaleyle_aynı_range_paper,(FRL−FLC)/std_range_paper,FLC_vs_E6_%_range_paper,FLC_vs_bat_%_range_paper
+0.910,FLC > FRL > Sadece batarya,False,-0.071,3.808,8.738,FLC > FRL > Sadece batarya,False,-0.380,3.556,9.359
+0.920,FLC > FRL > Sadece batarya,False,-0.285,3.677,8.842,FLC > FRL > Sadece batarya,False,-0.301,3.287,9.208
+0.930,FLC > FRL > Sadece batarya,False,-0.611,4.072,9.446,FLC > FRL > Sadece batarya,False,-0.492,3.281,9.271
+0.940,FLC > FRL > Sadece batarya,False,-0.657,3.836,9.712,FLC > FRL > Sadece batarya,False,-0.577,3.285,9.607
+0.950,FLC > FRL > Sadece batarya,False,-0.285,3.566,9.957,FLC > FRL > Sadece batarya,False,-0.288,3.267,9.622
+0.960,FLC > FRL > Sadece batarya,False,-0.555,3.345,10.688,FLC > FRL > Sadece batarya,False,-0.550,3.430,9.911
+0.970,FLC > FRL > Sadece batarya,False,-0.418,3.248,10.922,FLC > FRL > Sadece batarya,False,-0.385,3.325,9.917
+0.980,FLC > FRL > Sadece batarya,False,-0.391,2.945,10.708,FLC > FRL > Sadece batarya,False,-0.389,3.230,10.077
+0.990,FRL > FLC > Sadece batarya,True,0.305,2.361,9.629,FLC > FRL > Sadece batarya,False,-0.184,3.139,10.015
+1.000,FLC > FRL > Sadece batarya,False,-0.327,2.414,9.863,FLC > FRL > Sadece batarya,False,-0.314,3.190,10.289
