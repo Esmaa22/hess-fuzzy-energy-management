@@ -91,6 +91,30 @@ class TimedEMS(EMS):
         return 1e6 * self.t / max(self.n, 1)
 
 
+class NoisyEMS(EMS):
+    """X5 ve demo: iç EMS'e gürültülü ölçüm verir. Simülatör (fizik) gerçek değerleri kullanır.
+
+    P_dem · (1 + N(0, σ)),  SoC_SC + N(0, σ) (0–1'e kırpılır). Her bölüm başında aynı tohum.
+    """
+
+    def __init__(self, inner: EMS, sigma: float, seed: int = 0):
+        self.inner, self.sigma, self.seed, self.name = inner, sigma, seed, inner.name
+        self.battery_regen, self.sc_recharge = inner.battery_regen, inner.sc_recharge
+        self.rng = np.random.default_rng(seed)
+
+    def reset(self):
+        self.rng = np.random.default_rng(self.seed)
+        self.inner.reset()
+
+    def finish(self, soc_b, soc_sc):
+        self.inner.finish(soc_b, soc_sc)
+
+    def sc_request(self, p, soc_b, soc_sc):
+        n1, n2 = self.rng.standard_normal(2)
+        return self.inner.sc_request(p * (1.0 + self.sigma * n1), soc_b,
+                                     float(np.clip(soc_sc + self.sigma * n2, 0.0, 1.0)))
+
+
 # ---------------------------------------------------------------------------
 @dataclass
 class SimResult:

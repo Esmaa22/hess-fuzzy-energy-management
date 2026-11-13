@@ -39,7 +39,7 @@ from hess.ablations import FLCRechargeEMS, S2CrispChargeEMS
 from hess.drive_cycle import load_profile
 from hess.flc_ems import FLCEMS
 from hess.metrics import compute
-from hess.simulator import EMS, BatteryOnlyEMS, Simulator
+from hess.simulator import BatteryOnlyEMS, NoisyEMS, Simulator
 from hess.test_cycles import cycles_table, make_test_cycles
 from hess.tuning import load_tuned, make_ems, metric_args
 
@@ -54,27 +54,6 @@ NOISE_SEEDS = range(5)
 C_BASE, C_C0 = "#a3a29b", "#5f5e58"
 C_SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
 INK, MUTED, GRID = "#2b2b29", "#6b6a64", "#e4e3dd"
-
-
-# --------------------------------------------------------------------------- gürültülü ölçüm
-class NoisyEMS(EMS):
-    """X5: iç EMS'e gürültülü P_dem ve SoC_SC verir. Simülatör (fizik) gerçek değerleri kullanır."""
-
-    def __init__(self, inner: EMS, sigma: float, seed: int):
-        self.inner, self.sigma, self.seed, self.name = inner, sigma, seed, inner.name
-        self.battery_regen, self.sc_recharge = inner.battery_regen, inner.sc_recharge
-
-    def reset(self):
-        self.rng = np.random.default_rng(self.seed)
-        self.inner.reset()
-
-    def finish(self, soc_b, soc_sc):
-        self.inner.finish(soc_b, soc_sc)
-
-    def sc_request(self, p, soc_b, soc_sc):
-        n1, n2 = self.rng.standard_normal(2)
-        return self.inner.sc_request(p * (1.0 + self.sigma * n1), soc_b,
-                                     float(np.clip(soc_sc + self.sigma * n2, 0.0, 1.0)))
 
 
 # --------------------------------------------------------------------------- işçi süreçler

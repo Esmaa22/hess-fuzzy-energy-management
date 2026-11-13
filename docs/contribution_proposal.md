@@ -418,3 +418,13 @@ Eğitim çevriminde en iyi tek nokta karşılaştırmasında C0 ile S2 hemen hem
 3. **SoC'ye uyarlanan tavan (D-23'teki motivasyon) bu deneylerde katkı vermedi** (A4, p = 0.17). Rapordaki dürüst ifade şu: "S2'nin kazancı bulanık tavandan değil, crisp kırpma yapısının bulanık şarj geri beslemesiyle birleşmesinden geliyor."
 4. **S1 en dayanıklı ama en az etkili.** En kötü durumu iyi, ama orantılı pay yapısı nedeniyle tipik çevrimde crisp'in gerisinde (K4b ✗). Bu, Discussion bölümünde çıktı yapısının seçimiyle ilgili bir ders olarak tartışılacak.
 5. **Bedel menzil.** S2'nin deşarj süresi B1'e göre +%0.13, F0'a göre ~−%3. K3 (≥ −%1) bütün çevrimlerde sağlanıyor; S2'nin en kötü çevrimi −%0.45.
+
+---
+
+## 13. Adım 8: Canlı demo
+
+- `demo/app.py` (Streamlit), çalıştırma: `streamlit run demo/app.py`. Sekmeler ve önerilen gösterim senaryosu `demo/README.md` dosyasında.
+- Demo, deneylerle aynı kodu kullanıyor: `make_ems`, `config/tuned.yaml`, `Simulator`, `test_cycles`. Örneğin agresif rejim, seed 101, uzun deşarj koşulunda demo X3 tablosundaki değerleri birebir üretiyor: C0 136.9 A ve çöküyor, S2 69.5 A.
+- `NoisyEMS` (X5 gürültü sarmalayıcısı) `simulator.py`'ye taşındı ve demoda da kullanılıyor. X5 sonuçları değişmedi.
+- Testler: `tests/test_demo.py` (Streamlit `AppTest`). Toplam 96 test.
+- 7.5 (K-FRL, isteğe bağlı) zaman nedeniyle yapılmadı. Ana bulgular FRL'ye bağlı değil. Limitations ve Future Work bölümlerinde belirtilecek.
