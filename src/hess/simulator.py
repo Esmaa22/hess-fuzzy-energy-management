@@ -8,6 +8,11 @@ Her EMS yalnızca süperkapasitörden istenen bara gücünü söyler (`sc_reques
 katmanı (D-06) bu isteği fiziksel sınırlara kırpar; kalan çekiş gücünü bataryaya,
 kalan fren gücünü (izin varsa) bataryaya, yoksa mekanik frene verir. Katman bütün
 EMS'ler için aynıdır.
+
+D-20 (Adım 7.1): `sc_recharge = True` olan bir EMS çekişte/duruşta (P_dem ≥ 0) negatif
+istek verebilir. Bu, bataryadan SC'ye şarj demektir: P_B,bus = P_dem + P_ch, P_SC,bus = −P_ch.
+P_ch, SC'nin şarj sınırına ve bataryanın güç sınırına kırpılır. Bayrak kapalıysa (bütün
+baseline'lar) negatif istek eskisi gibi 0'a kırpılır; baseline sonuçları değişmez.
 """
 
 from __future__ import annotations
@@ -28,6 +33,7 @@ class EMS:
 
     name = "base"
     battery_regen = False   # frenlemede batarya şarj edilebilir mi
+    sc_recharge = False     # D-20: çekişte bataryadan SC'ye şarj istenebilir mi
 
     def reset(self) -> None:  # bölüm başında çağrılır (FRL için)
         pass
@@ -36,7 +42,10 @@ class EMS:
         pass
 
     def sc_request(self, p_dem: float, soc_b: float, soc_sc: float) -> float:
-        """Süperkapasitörden istenen bara gücü [W] (çekişte ≥ 0, frenlemede ≤ 0)."""
+        """Süperkapasitörden istenen bara gücü [W] (çekişte ≥ 0, frenlemede ≤ 0).
+
+        sc_recharge = True ise çekişte negatif değer = bataryadan SC'ye şarj gücü.
+        """
         raise NotImplementedError
 
 
@@ -77,9 +86,20 @@ class Simulator:
         return p_bus / self.eta if p_bus >= 0 else p_bus * self.eta
 
     # ---- güvenlik katmanı (D-06) -----------------------------------------
+    BAT_POWER_MARGIN = 0.9   # D-20: şarj sırasında batarya gücü V_oc²/(4R)'nin en çok %90'ı
+
+    def _recharge_limit(self, p: float, p_ch: float) -> float:
+        """İstenen şarj gücünü (bara tarafı, ≥ 0) SC ve batarya sınırlarına kırpar."""
+        p_ch = min(p_ch, self.sc.max_charge_power(self.dt) / self.eta)
+        p_bat_max = self.BAT_POWER_MARGIN * self.bat.max_power() * self.eta   # bara tarafı
+        return max(min(p_ch, p_bat_max - p), 0.0)
+
     def _arbitrate(self, ems: EMS, p: float) -> tuple[float, float, float]:
         """(P_B,bus, P_SC,bus, P_mek) döndürür."""
         req = ems.sc_request(p, self.bat.soc, self.sc.soc)
+        if p >= 0.0 and req < 0.0 and ems.sc_recharge:  # D-20: bataryadan SC şarjı
+            p_ch = self._recharge_limit(p, -req)
+            return p + p_ch, -p_ch, 0.0
         if p >= 0.0:  # çekiş
             req = min(max(req, 0.0), p)
             p_sc = min(req, self.sc.max_discharge_power(self.dt) * self.eta)

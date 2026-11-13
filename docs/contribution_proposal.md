@@ -185,3 +185,41 @@ Bir hipotez tutmazsa sonuç olduğu gibi raporlanacak ve nedenleri Discussion b�
 4. **7.4** X3 test çevrimlerinin üretilmesi, X3–X5 → `experiments/proposed/run_robustness.py`.
 5. **7.5** *(zaman kalırsa)* K-FRL.
 6. **8** Canlı demo (Streamlit). FLC ile SCS-FLC aynı çevrimde yan yana, girdiler kaydırıcıyla değiştirilebilir.
+
+---
+
+## 9. Uygulama sırasında alınan kararlar (Adım 7)
+
+### D-20: Bataryadan SC'ye şarj (simülatör)
+- EMS arayüzüne `sc_recharge` bayrağı eklendi (varsayılan `False`).
+- Bayrak açık bir EMS, P_dem ≥ 0 iken negatif istek verirse bu bir şarj isteği sayılıyor: P_B,bus = P_dem + P_ch, P_SC,bus = −P_ch.
+- Güvenlik katmanı P_ch'yi iki sınıra kırpıyor: SC'nin şarj sınırı (`max_charge_power`) ve batarya gücünün V_oc²/(4R) değerinin %90'ı.
+- Bayrak kapalı EMS'lerde (B0, B1, F0, R0) negatif istek eskisi gibi 0'a kırpılıyor.
+- **Regresyon kontrolü:** `run_reproduction` değişiklik öncesi ve sonrası çalıştırıldı. E1/E2 tablolarında yalnızca karar süresi (µs) satırı değişti (ölçüm gürültüsü); bütün fiziksel sonuçlar bit düzeyinde aynı.
+
+### D-21: SCS-FLC'de C_SC'nin anlamı
+- Referans FLC'de C_SC, C_B ile normalize ediliyor: c_sc = C_SC / (C_B + C_SC). SCS-FLC'de C_B çıktısı yok.
+- Bu yüzden C_SC, P_dem'in doğrudan SC'ye giden yüzdesi: P_SC = C_SC/100 · P_dem.
+- Frenlemede kabul oranı C_SC/100 (Full = 100 → frenleme gücünün tamamı SC'ye).
+
+### D-22: P_ch çıktısı ve çıktı evrenleri
+- P_ch terimleri: Zero / Low / Medium / High = 0 / 300 / 700 / 1200 W (CP4 §3 taslağı). Simetrik üçgen, yarı genişlik 100 W.
+- Çekişteki net istek: C_SC/100 · P_dem − P_ch.
+- Çıktı evrenleri seviyelerden otomatik kuruluyor: [min − hw, max + hw]. Böylece 7.2'deki ayar seviyeleri değiştirdiğinde D-17'deki sınır yanlılığı geri gelmiyor.
+- Bütün sayısal değerler `config/default.yaml` → `scs_flc` altında. Girdi MF'leri yazılmazsa `flc` bölümündekiler kullanılıyor. `SCSFLCEMS(cfg, overrides=...)` ile ayar ve X4 için geçersiz kılınabiliyor.
+- Ablasyon A1: `SCSFLCEMS(cfg, recharge=False)`.
+
+### 7.1 duman testi (taslak parametreler, ayarsız; resmî X1 değil)
+Uzun deşarj, eğitim çevrimi, %100 / %100 başlangıç:
+
+| | Tepe I_B [A] | %99 I_B [A] | RMS [A] | ΔT [°C] | Deşarj süresi [s] | En düşük SoC_SC |
+|---|---|---|---|---|---|---|
+| B1 | 137.1 | 132.0 | 48.05 | 2.17 | 7235 | 1.000 |
+| F0 | 136.2 | 127.7 | 43.57 | 1.88 | 7477 | 0.000 |
+| **S1** | **90.4** | **81.1** | **37.11** | **1.32** | **7332** | **0.279** |
+| A1 | 135.8 | 120.7 | 42.47 | 1.81 | 7488 | 0.000 |
+
+- Taslak değerlerle K1 (tepe −%33.6 ≥ %30, SoC_SC ≥ 0.10), K2 (RMS, ΔT < F0) ve K3 (B1'e göre +%1.3) ön sinyal olarak sağlanıyor.
+- F0'a göre deşarj süresi −%1.9. Bu, yeniden şarjın dönüştürücü ve ESR kayıplarının bedeli.
+- A1 neredeyse F0 ile aynı. Kazancı yeniden şarj üretiyor, kural değişikliği tek başına yetmiyor.
+- Kesin sonuçlar 7.2'deki ayardan sonra 7.3'te (X1, X2) üretilecek.

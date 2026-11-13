@@ -88,6 +88,19 @@ flc:                         # plan §4: A-11, A-12, D-08, D-09, D-17
   universe_points: 1101      # 0.1 adım
   regen_csc_ref: 20          # D-09: frenlemede kabul oranı = C_SC / 20
 
+scs_flc:                     # Önerilen yöntem S1 (CP4, Adım 7.1, D-20…D-22)
+  # Girdi MF'leri: yazılmazsa flc.soc_terms / flc.p_terms kullanılır (CP4 §3: aynı MF'ler).
+  # 7.2'deki ayar ve X4 duyarlılık analizi için burada geçersiz kılınabilir:
+  # p_terms: {Regeneration: [...], Low: [...], Medium: [...], High: [...]}
+  # soc_terms: {Low: [...], Medium: [...], High: [...]}
+  # D-21: C_SC, P_dem'in doğrudan SC'ye giden yüzdesi (C_B yok). Frenlemede kabul = C_SC/100.
+  csc_levels: {Z: 0, VS: 10, S: 20, M: 25, L: 45, VL: 60, Full: 100}
+  csc_halfwidth: 5
+  # D-22: P_ch [W], bataryadan SC'ye şarj gücü (bara tarafı). CP4 §3 taslak değerleri.
+  pch_levels: {Zero: 0, Low: 300, Medium: 700, High: 1200}
+  pch_halfwidth: 100
+  universe_points: 1101     # çıktı evreni [min − hw, max + hw] seviyelerden otomatik kurulur (D-17)
+
 frl:                         # [1] + A-13…A-15, D-10…D-14
   alpha: 0.1
   gamma: 0.9
