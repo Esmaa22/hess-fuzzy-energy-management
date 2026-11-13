@@ -1,0 +1,12 @@
+Ölçüt,Yöntem,Koşul,Değer,Sağlandı
+K4,S1,X3: 30 çevrim ort. tepe I_B ≤ C0,75.9 / C0 93.6 A,True
+K4,S1,X3: en kötü durum C0'dan iyi ve eşleştirilmiş fark p < 0.05,"en kötü 88.6 / C0 137.1 A; medyan fark +9.4 A, p = 0.0473",False
+K4,S1,X4: ±%20 bozulmada en büyük kötüleşme C0'dan küçük,%18.1 / C0 %137.6,True
+K4,S2,X3: 30 çevrim ort. tepe I_B ≤ C0,61.1 / C0 93.6 A,True
+K4,S2,X3: en kötü durum C0'dan iyi ve eşleştirilmiş fark p < 0.05,"en kötü 71.5 / C0 137.1 A; medyan fark -1.9 A, p = 1.68e-06",True
+K4,S2,X4: ±%20 bozulmada en büyük kötüleşme C0'dan küçük,%12.3 / C0 %137.6,True
+K5,S1-A1,"X3: S1-A1, S1'den anlamlı kötü (tepe I_B)","medyan fark +50.3 A, p = 1.86e-09",True
+K5,S1-A2,"X3: S1-A2, S1'den anlamlı kötü (tepe I_B)","medyan fark +15.8 A, p = 1.86e-09",True
+K5,S2-A1,"X3: S2-A1, S2'den anlamlı kötü (tepe I_B)","medyan fark +79.6 A, p = 1.86e-09",True
+K5,S2-A4,"X3: S2-A4, S2'den anlamlı kötü (tepe I_B)","medyan fark -0.1 A, p = 0.171",False
+K5,S2-A5,"X3: S2-A5, S2'den anlamlı kötü (tepe I_B)","medyan fark +0.6 A, p = 0.00219",True

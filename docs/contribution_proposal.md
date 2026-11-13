@@ -336,3 +336,85 @@ Ayarlı değerler:
 
 ### Ara sonuç
 Eğitim çevriminde en iyi tek nokta karşılaştırmasında C0 ile S2 hemen hemen eşit (tepe I_B 57 / 61 A, I²t ve ΔT aynı). Bulanık sürümün iddiası artık açıkça şu: **aynı performansı daha büyük bir SC güvenlik payıyla ve parametre değişimlerine karşı daha dayanıklı biçimde vermek.** Bu iddia X3 (görülmemiş çevrimler) ve X4 (±%10 / ±%20 bozulma) ile sınanacak.
+
+---
+
+## 12. Adım 7.4: X3 genelleme, X4 parametre duyarlılığı, X5 ölçüm gürültüsü
+
+`experiments/proposed/run_robustness.py` (~3.5 dk, 2 süreç, 395 çalıştırma). Tablolar `results/tables/X3_*.csv`, `X4_*.csv`, `X5_*.csv` ve `K4_K5.csv`; grafikler `results/figures/X3_generalization.png`, `X4_sensitivity.png` ve `X5_noise.png`.
+
+### X3 test çevrimleri (`src/hess/test_cycles.py`)
+- Eğitim çevrimiyle aynı üreteç ve aynı kalibre istatistikler kullanılıyor: 900 s, 12.4 km, v_max 83 km/h, a_max 2.7 m/s², d_max 2.6 m/s².
+- Seed'ler 101–110; eğitim seed'i 7 hiç kullanılmıyor.
+- Rejimler, seyirdeki mikro dalgalanmanın genliğiyle ayrılıyor: sakin 0.5 m/s, nominal 1.0 m/s, agresif 1.5 m/s.
+- Kalibre edilen istatistikler rejimler arasında aynı. Farklı olan talep gücünün dağılımı:
+
+| Rejim | Pozitif P_dem ort. | P_dem > 3 kW süre payı | Frenleme enerjisi / çevrim |
+|---|---|---|---|
+| sakin | 1834 W | %11.3 | 15.4 Wh |
+| nominal | 2399 W | %19.0 | 26.2 Wh |
+| agresif | 2837 W | %23.3 | 36.2 Wh |
+
+- R0 X3'e dahil edilmedi. X1'de F0 ile arasındaki fark 1 std'nin altındaydı; 5 seed × 30 çevrim maliyetine karşılık yeni bilgi vermiyor. Limitations bölümünde belirtilecek.
+
+### X3 sonuçları (30 çevrim, uzun deşarj)
+
+| | Tepe I_B ort. | Medyan | En kötü | Std | Sakin / nominal / agresif | Süre, B1'e göre ort. | En düşük SoC_SC (en kötü çevrim) | Çöken |
+|---|---|---|---|---|---|---|---|---|
+| F0 | 137.0 | 137.0 | 137.1 | 0.2 | 137 / 137 / 137 | +%3.20 | 0.000 | 30/30 |
+| C0 | 93.6 | **57.1** | 137.1 | 39.8 | 57.1 / 87.0 / 137 | +%0.59 | 0.000 | **14/30** |
+| S1 | 75.9 | 73.7 | 88.6 | 7.2 | 68.7 / 73.9 / 85.3 | +%0.54 | 0.309 | 0/30 |
+| **S2** | **61.1** | 57.2 | **71.5** | 6.2 | 55.5 / 58.4 / 69.4 | +%0.13 | 0.133 | **0/30** |
+
+**Eşleştirilmiş Wilcoxon testleri (tepe I_B, 30 çevrim):**
+- **S2 − C0:** S2, 30 çevrimin 26'sında daha iyi. Medyan fark −1.9 A, ortalama fark −32.5 A, p = 1.7·10⁻⁶. %99 I_B'de 28/30 çevrimde daha iyi.
+- **S1 − C0:** Medyan fark +9.4 A, yani tipik çevrimde S1 daha kötü. Ortalama fark ise −17.7 A, çünkü C0 bazı çevrimlerde çöküyor (p = 0.047).
+- **S2 − S1:** S2, 30 çevrimin 30'unda daha iyi (−14.5 A).
+- **C0'ın çöktüğü 14 çevrimin dağılımı:** sakin 0/10, nominal 4/10, agresif 10/10. Ayarlı eşik, eğitim çevriminden (nominal) daha zorlu bir sürüşte SC'yi koruyamıyor.
+
+### X4: Parametre duyarlılığı (eğitim çevrimi, tek parametre bozulması)
+
+| | Nominal tepe I_B | ±%20'de en kötü | ±%20'de en büyük kötüleşme | ±%10'da en büyük kötüleşme | Çöken (16 bozulmadan) | En hassas parametre |
+|---|---|---|---|---|---|---|
+| C0 | 57.1 A | 136 A | +%138 | +%137 | **7** | p_th −%20 |
+| S1 | 73.2 A | 86.5 A | +%18.1 | +%12.0 | 0 | k_p +%20 |
+| **S2** | 60.8 A | 68.3 A | **+%12.3** | **+%3.6** | **0** | c_cap +%20 |
+
+- C0'da yalnızca −%10'luk bir değişiklik bile çöküşe yol açıyor: eşik veya şarj gücü %10 düşünce SC boşalıyor.
+- Bulanık sürümlerde kötüleşme düzgün ve sınırlı; hiçbir bozulmada çöküş yok.
+
+### X5: Ölçüm gürültüsü (eğitim çevrimi, 5 tohum)
+
+| | σ = 0 | σ = 0.02 | σ = 0.05 | σ = 0.05'te en düşük SoC_SC |
+|---|---|---|---|---|
+| F0 | 136.2 | 136.2 (+%0) | 136.2 (+%0) | 0.00 |
+| C0 | 57.1 | 62.6 (+%9.6) | 71.7 (+%25.5) | **0.06** |
+| S1 | 73.2 | 75.0 (+%2.4) | 81.1 (+%10.7) | 0.52 |
+| S2 | 60.8 | 62.9 (+%3.5) | 71.6 (+%17.7) | 0.40 |
+
+- σ = 0.05'te C0 ile S2 aynı tepe akıma iniyor (~72 A).
+- Göreli kötüleşme C0'da daha büyük. Asıl fark SC rezervinde: C0 0.06'ya iniyor ve çöküşün eşiğine geliyor, S2 ise 0.40'ta kalıyor.
+- F0 gürültüden etkilenmiyor, çünkü SC zaten boş.
+
+### Hipotezlerin değerlendirilmesi (`K4_K5.csv`)
+
+| | S1 | S2 |
+|---|---|---|
+| K4a: X3 ort. tepe I_B ≤ C0 | ✓ (75.9 / 93.6) | ✓ (61.1 / 93.6) |
+| K4b: X3 en kötü durum C0'dan iyi ve p < 0.05 | ✗ (en kötüsü iyi, ama tipik çevrimde daha kötü: medyan +9.4 A) | ✓ (71.5 / 137.1 A, p = 1.7·10⁻⁶) |
+| K4c: X4 ±%20 kötüleşme C0'dan küçük | ✓ (%18 / %138) | ✓ (%12 / %138) |
+
+| K5 (X3, tepe I_B, Wilcoxon) | Medyan fark | p | Sonuç |
+|---|---|---|---|
+| S1-A1 (P_ch = 0) | +50.3 A | 1.9·10⁻⁹ | anlamlı kötü ✓ |
+| S1-A2 (Tablo 5 + P_ch) | +15.8 A | 1.9·10⁻⁹ | anlamlı kötü ✓ |
+| S2-A1 (P_ch = 0) | +79.6 A | 1.9·10⁻⁹ | anlamlı kötü ✓ |
+| S2-A4 (sabit tavan) | −0.1 A | 0.17 | fark yok ✗ |
+| S2-A5 (crisp şarj kuralı) | +0.6 A (ort. +24.4 A) | 0.002 | anlamlı kötü ✓; **11/30 çevrimde çöküyor** |
+
+### Sonuç
+1. **S2, ana katkı olarak bütün ölçütleri sağlıyor (K1–K4).** Görülmemiş 30 çevrimde hiç çökmüyor. Ortalama tepe akımı C0'dan %35, F0'dan %55 düşük; en kötü durumu 71.5 A (C0'da 137 A). Parametre bozulmasında en fazla %12 kötüleşiyor (C0'da %138).
+2. **Dayanıklılığın mekanizması bulanık şarj yasası.** A5'te S2'nin tavanı korunup yalnızca şarj kuralı crisp yapılınca yöntem 11/30 çevrimde çöküyor. A4'te tavan sabitlenince hiçbir şey değişmiyor. Yani S2'yi C0'dan ayıran bileşen, SoC_SC arttıkça sürekli azalan bulanık P_ch. Crisp kuraldaki aç-kapa şarj, talep arttığında SC'yi koruyamıyor.
+3. **SoC'ye uyarlanan tavan (D-23'teki motivasyon) bu deneylerde katkı vermedi** (A4, p = 0.17). Rapordaki dürüst ifade şu: "S2'nin kazancı bulanık tavandan değil, crisp kırpma yapısının bulanık şarj geri beslemesiyle birleşmesinden geliyor."
+4. **S1 en dayanıklı ama en az etkili.** En kötü durumu iyi, ama orantılı pay yapısı nedeniyle tipik çevrimde crisp'in gerisinde (K4b ✗). Bu, Discussion bölümünde çıktı yapısının seçimiyle ilgili bir ders olarak tartışılacak.
+5. **Bedel menzil.** S2'nin deşarj süresi B1'e göre +%0.13, F0'a göre ~−%3. K3 (≥ −%1) bütün çevrimlerde sağlanıyor; S2'nin en kötü çevrimi −%0.45.

@@ -1,0 +1,4 @@
+Yöntem,Nominal tepe I_B,En kötü tepe I_B (±%20),En büyük kötüleşme ±%20 [%],Ort. kötüleşme ±%20 [%],En büyük kötüleşme ±%10 [%],Çöken (16 bozulmadan),En kötü parametre
+C0,57.12,135.7,137.6,69.33,137.3,7,p_th -20%
+S1,73.25,86.54,18.14,6.077,11.99,0,k_p +20%
+S2,60.84,68.3,12.27,2.365,3.568,0,c_cap +20%
