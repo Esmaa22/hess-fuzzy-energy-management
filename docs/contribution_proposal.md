@@ -276,3 +276,63 @@ Ayarlı değerler:
 - K1 eğitim çevriminde üç yöntem için de sağlanıyor (F0'a göre tepe I_B −%46…−%58).
 - K4'ün "ortalama tepe ≤ C0" kısmı en iyi noktalar arasında tutmuyor: C0 < S2 < S1.
 - Ana sınama X3 (30 test çevrimi) ve X4'te olacak: ayarlı noktalar, görmedikleri çevrimlerde ve bozulan parametrelerde ne kadar dayanıklı?
+
+---
+
+## 11. Adım 7.3: X1 ana karşılaştırma ve X2 ablasyonlar (eğitim çevrimi)
+
+`experiments/proposed/run_main.py` (~30 s). Ayarlı parametreler `config/tuned.yaml` dosyasından okunuyor. Tablolar `results/tables/X1_*.csv` ve `X2_ablation.csv`, grafikler `results/figures/X1_summary.png`, `X1_soc_current.png` ve `X2_ablation.png`.
+
+> **Uyarı:** Bu çevrim ayarda kullanılan eğitim çevrimi. Buradaki sonuçlar "en iyi durum"u gösteriyor. Genelleme X3'te (30 test çevrimi) sınanacak.
+
+**Kod değişikliği:** Zamanlama sarmalayıcısı `TimedEMS` olarak `simulator.py`'ye taşındı ve artık `sc_recharge` bayrağını da iletiyor. `run_reproduction` bunu kullanıyor. Yeniden üretim tablolarında karar süresi dışında hiçbir değer değişmedi.
+
+### X1: Uzun deşarj (%100 / %100 → SoC_B = %20)
+
+| | Tepe I_B [A] | RMS I_B [A] | I²t [A²s] | ΔT [°C] | Süre, B1'e göre | En düşük SoC_SC | Karar [µs] |
+|---|---|---|---|---|---|---|---|
+| B0 sadece batarya | 137.1 | 48.0 | 1.56e7 | 2.10 | −%6.6 | – | 0.15 |
+| B1 + rejenerasyon | 137.1 | 48.0 | 1.67e7 | 2.17 | 0 | – | 0.15 |
+| F0 FLC (Tablo 5) | 136.2 | 43.6 | 1.42e7 | 1.88 | +%3.3 | 0.000 | 183 |
+| R0 FRL (5 seed) | 132.9 ± 4.4 | 43.4 ± 0.3 | 1.41e7 | 1.84 ± 0.03 | +%3.2 | 0.030 | 396 |
+| C0 crisp (ayarlı) | **57.1** | **35.9** | 9.43e6 | **1.15** | +%1.0 | 0.174 | 0.2 |
+| S1 SCS-FLC pay | 73.2 | 37.2 | 1.01e7 | 1.27 | +%0.3 | **0.548** | 140 |
+| S2 SCS-FLC tavan | 60.8 | 36.0 | **9.42e6** | 1.17 | +%0.3 | 0.408 | 101 |
+
+**İlk çevrim (SC başlangıçta dolu), tepe I_B:**
+- B0 117.0 A, F0 86.2 A, R0 103.9 A.
+- C0 49.1 A, S1 61.5 A, S2 49.1 A.
+
+**K1–K3** (`X1_criteria.csv`): Eğitim çevriminde S1, S2 ve C0'ın üçü de bütün ölçütleri sağlıyor.
+- K1: Tepe I_B F0'a göre S1'de −%46.2, S2'de −%55.3, C0'da −%58.1. En düşük SoC_SC'nin üçünde de ≥ 0.17.
+- K2: RMS, I²t ve ΔT üçünde de hem F0'dan hem R0'dan düşük.
+- K3: Deşarj süresi B1'e göre +%0.3 (S1, S2) ve +%1.0 (C0).
+
+**Gözlemler:**
+1. **Tepe akım ile menzil arasında bir ödünleşim var.** Önerilen yöntemler, tepe akımı F0'a göre yarıdan fazla düşürüyor ama deşarj süresinde F0'ın ~%3 gerisinde kalıyor (S1/S2 −%2.9). Bu, yeniden şarj zincirindeki kayıpların bedeli: batarya → DC/DC → SC → DC/DC. F0'ın süre avantajı ise SC'yi ilk ~20 dakikada tamamen boşaltıp ondan sonra hiç kullanmamasından geliyor (`X1_soc_current.png`).
+2. **SC'nin doluluğu farklı biçimde davranıyor.** S1 ve S2, SC'yi deşarj boyunca 0.4–0.7 bandında tutuyor. C0'da ise SoC_SC zamanla aşağı kayıyor ve deşarjın sonunda 0.17'ye iniyor. Bu, eğitim çevriminde bile C0'ın SC rezervinin ince olduğunu gösteriyor; 7.2'de görülen kırılganlık ile uyumlu.
+3. **Hesaplama maliyeti.** S2'nin karar süresi 101 µs, S1'inki 140 µs, F0'ınki 183 µs. Kural sayısının 36'dan 12'ye inmesi süreyi kısaltıyor. Hepsi 1 s'lik zaman adımının çok altında. Crisp kural ise ~0.2 µs.
+
+### X2: Ablasyonlar (uzun deşarj; ablasyonlar yeniden ayarlanmadı)
+
+| Varyant | Tepe I_B [A] | %99 I_B [A] | Süre, B1'e göre | En düşük SoC_SC |
+|---|---|---|---|---|
+| **S1** | 73.2 | 68.8 | +%0.32 | 0.548 |
+| A1: S1, P_ch = 0 | 134.7 | 103.1 | +%3.54 | 0.000 |
+| A2: Tablo 5 + P_ch | 89.4 | 82.3 | +%0.97 | 0.225 |
+| A3: S1 + SoC_B (36 kural) | 71.5 | 67.4 | +%1.34 | 0.349 |
+| **S2** | 60.8 | 56.9 | +%0.28 | 0.408 |
+| A1: S2, P_ch = 0 | 137.0 | 127.0 | +%3.37 | 0.000 |
+| A3: S2 + SoC_B (36 kural) | 59.9 | 57.2 | +%1.02 | 0.278 |
+| A4: S2, sabit tavan (d_cap = 0) | 59.7 | 56.8 | +%0.29 | 0.407 |
+| A5: S2 tavanı + C0'ın crisp şarjı | 60.7 | 58.8 | +%0.83 | 0.229 |
+
+**K5 değerlendirmesi** (tek deterministik çevrim olduğu için istatistiksel anlamlılık yok; yönler aşağıda, anlamlılık X3'te sınanacak):
+1. **Yeniden şarj (A1) vazgeçilmez.** P_ch olmadan SC iki yöntemde de boşalıyor ve tepe akım F0 seviyesine geri dönüyor. Bu, 7.1 duman testindeki bulguyu ayarlı parametrelerle doğruluyor.
+2. **Kural tabanının değişikliği (A2) de katkı veriyor.** Tablo 5'e yalnızca P_ch eklemek tepe akımı 136 A'dan 89 A'ya indiriyor. S1'in yeni kuralları bunu 73 A'ya düşürüyor. Yani kazancın büyük kısmı şarjdan, ~16 A'lık bir kısmı da kural tabanından geliyor.
+3. **SoC_B girdisi (A3) gereksiz değil.** K5 "A3 ile S1 arasında fark yok" diyordu. Gerçekte A3 tepe akımı ~1–2 A azaltıyor ve deşarj süresini ~%0.7–1 uzatıyor; buna karşılık SC rezervini düşürüyor (S1'de 0.55 → 0.35, S2'de 0.41 → 0.28). Bunlar küçük etkiler ve kural sayısı 3 katına çıkıyor. 12 kuralda kalma kararı korunuyor, ama raporda "SoC_B gereksiz" yerine "küçük bir menzil–rezerv ödünleşimi sağlıyor" denecek.
+4. **SoC'ye uyarlanan tavanın (A4) eğitim çevriminde katkısı yok.** Sabit tavan S2 ile aynı sonucu veriyor (59.7 A ve 60.8 A; SC rezervi de aynı). 7.2'deki ayarın küçük bir d_cap (192 W) seçmesiyle tutarlı.
+5. **Bulanık şarj yasası (A5) tepe akımı değil, SC rezervini etkiliyor.** S2'nin tavanına C0'ın crisp şarj kuralı takılınca tepe akım değişmiyor (60.7 A), ama en düşük SoC_SC 0.41'den 0.23'e iniyor. Yani S2'nin farkı ortalama performansta değil, güvenlik payında. Bu, 7.2'deki dayanıklılık bulgusunun mekanizması için bir aday. Kesin hüküm X3 ve X4'te verilecek.
+
+### Ara sonuç
+Eğitim çevriminde en iyi tek nokta karşılaştırmasında C0 ile S2 hemen hemen eşit (tepe I_B 57 / 61 A, I²t ve ΔT aynı). Bulanık sürümün iddiası artık açıkça şu: **aynı performansı daha büyük bir SC güvenlik payıyla ve parametre değişimlerine karşı daha dayanıklı biçimde vermek.** Bu iddia X3 (görülmemiş çevrimler) ve X4 (±%10 / ±%20 bozulma) ile sınanacak.

@@ -106,3 +106,42 @@ def test_s2_overrides_constant_cap(cfg):
     e = SCSFLCCapEMS(cfg, overrides=s2_overrides(cfg, c_cap=2500.0, d_cap=0.0))
     for s in (0.05, 0.5, 0.95):
         assert e.decide(5000.0, s)[0] == pytest.approx(2500.0, abs=1e-6)
+
+
+# --------------------------------------------------------------------------- X2 ablasyonları
+def test_a3_soc_b_rules(cfg):
+    from hess.scs_flc import SCSFLCCapEMS
+    for cls in (SCSFLCEMS, SCSFLCCapEMS):
+        base, a3 = cls(cfg), cls(cfg, soc_b=True)
+        assert len(a3.fis.rules) == 36
+        for p in (500.0, 2500.0, 5000.0, -1000.0):          # SoC_B yüksekken S1/S2 ile aynı
+            for s in (0.05, 0.5, 0.95):
+                assert a3.decide(p, s, 0.9) == pytest.approx(base.decide(p, s))
+    a3 = SCSFLCEMS(cfg, soc_b=True)
+    assert a3.decide(500.0, 0.05, 0.1)[1] == pytest.approx(700.0, abs=1.0)   # High → Medium
+    assert a3.decide(5000.0, 0.95, 0.1)[0] == pytest.approx(60.0, abs=0.1)   # VL kalır
+    assert a3.decide(5000.0, 0.5, 0.1)[0] == pytest.approx(60.0, abs=0.1)    # L → VL
+    a3c = SCSFLCCapEMS(cfg, soc_b=True)
+    assert a3c.decide(5000.0, 0.05, 0.1)[0] == pytest.approx(3000.0, abs=1.0)  # Loose → Mid
+
+
+def test_a2_a5(cfg):
+    from hess.ablations import FLCRechargeEMS, S2CrispChargeEMS
+    from hess.flc_ems import FLCEMS
+    a2 = FLCRechargeEMS(cfg, START["S1"])
+    f = FLCEMS(cfg)
+    assert a2.sc_request(500.0, 0.9, 0.05) == pytest.approx(f.sc_request(500.0, 0.9, 0.05) - 1200.0, abs=1.0)
+    assert a2.sc_request(-700.0, 0.9, 0.5) == pytest.approx(f.sc_request(-700.0, 0.9, 0.5))
+    c0 = {"p_th": 3000.0, "p_lo": 1500.0, "p_ch": 1000.0, "target": 0.8}
+    a5 = S2CrispChargeEMS(cfg, START["S2"], c0)
+    assert a5.sc_request(500.0, 1, 0.5) == pytest.approx(-1000.0)
+    assert a5.sc_request(500.0, 1, 0.9) == pytest.approx(0.0)
+    assert a5.sc_request(5000.0, 1, 0.95) == pytest.approx(3000.0, abs=1.0)
+
+
+def test_timed_forwards_flags(cfg):
+    from hess.simulator import TimedEMS
+    t = TimedEMS(SCSFLCEMS(cfg))
+    assert t.sc_recharge and not t.battery_regen
+    t.sc_request(500.0, 1, 0.5)
+    assert t.n == 1 and t.us > 0

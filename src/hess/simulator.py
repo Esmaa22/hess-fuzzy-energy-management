@@ -17,6 +17,7 @@ baseline'lar) negatif istek eskisi gibi 0'a kırpılır; baseline sonuçları de
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -58,6 +59,36 @@ class BatteryOnlyEMS(EMS):
 
     def sc_request(self, p_dem, soc_b, soc_sc):
         return 0.0
+
+
+class TimedEMS(EMS):
+    """Bir EMS'i sarar ve sc_request'in adım başına süresini ölçer (X6, E1 karar süresi).
+
+    Bayrakları (battery_regen, sc_recharge) iç EMS'ten aynen alır.
+    """
+
+    def __init__(self, inner: EMS):
+        self.inner, self.name = inner, inner.name
+        self.battery_regen, self.sc_recharge = inner.battery_regen, inner.sc_recharge
+        self.t, self.n = 0.0, 0
+
+    def reset(self):
+        self.t, self.n = 0.0, 0
+        self.inner.reset()
+
+    def finish(self, soc_b, soc_sc):
+        self.inner.finish(soc_b, soc_sc)
+
+    def sc_request(self, p, sb, ss):
+        t0 = time.perf_counter()
+        r = self.inner.sc_request(p, sb, ss)
+        self.t += time.perf_counter() - t0
+        self.n += 1
+        return r
+
+    @property
+    def us(self) -> float:
+        return 1e6 * self.t / max(self.n, 1)
 
 
 # ---------------------------------------------------------------------------

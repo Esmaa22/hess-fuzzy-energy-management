@@ -1,0 +1,13 @@
+Yöntem,Ölçüt,Koşul,Değer,Sağlandı
+S1,K1,"Tepe I_B, F0'a göre ≥ %30 düşük",−%46.2,True
+S1,K1,En düşük SoC_SC ≥ 0.10,0.548,True
+S1,K2,"RMS, I²t, ΔT hem F0'dan hem R0'dan düşük","RMS 37.25, I²t 1.01e+07, ΔT 1.27",True
+S1,K3,Deşarj süresi B1'e göre ≥ −%1,+0.32% (F0'a göre -2.93%),True
+S2,K1,"Tepe I_B, F0'a göre ≥ %30 düşük",−%55.3,True
+S2,K1,En düşük SoC_SC ≥ 0.10,0.408,True
+S2,K2,"RMS, I²t, ΔT hem F0'dan hem R0'dan düşük","RMS 36.04, I²t 9.42e+06, ΔT 1.17",True
+S2,K3,Deşarj süresi B1'e göre ≥ −%1,+0.28% (F0'a göre -2.97%),True
+C0,K1,"Tepe I_B, F0'a göre ≥ %30 düşük",−%58.1,True
+C0,K1,En düşük SoC_SC ≥ 0.10,0.174,True
+C0,K2,"RMS, I²t, ΔT hem F0'dan hem R0'dan düşük","RMS 35.92, I²t 9.43e+06, ΔT 1.15",True
+C0,K3,Deşarj süresi B1'e göre ≥ −%1,+1.01% (F0'a göre -2.26%),True

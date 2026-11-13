@@ -86,11 +86,13 @@ def make_ems(method: str, cfg: dict, prm: dict, **kw):
     if method == "C0":
         return CrispEMS.from_params(prm, name=kw.get("name", "C0"))
     if method == "S1":
-        e = SCSFLCEMS(cfg, overrides=s1_overrides(cfg, **prm), recharge=kw.get("recharge", True))
+        e = SCSFLCEMS(cfg, overrides=s1_overrides(cfg, **prm), recharge=kw.get("recharge", True),
+                      soc_b=kw.get("soc_b", False))
         e.name = kw.get("name", e.name)
         return e
     if method == "S2":
-        e = SCSFLCCapEMS(cfg, overrides=s2_overrides(cfg, **prm), recharge=kw.get("recharge", True))
+        e = SCSFLCCapEMS(cfg, overrides=s2_overrides(cfg, **prm), recharge=kw.get("recharge", True),
+                         soc_b=kw.get("soc_b", False))
         e.name = kw.get("name", e.name)
         return e
     raise ValueError(method)

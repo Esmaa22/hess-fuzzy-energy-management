@@ -31,7 +31,7 @@ from hess.drive_cycle import load_profile
 from hess.flc_ems import FLCEMS
 from hess.frl_ems import FRLEMS
 from hess.metrics import LABELS, LOWER_IS_BETTER, PAPER, compute
-from hess.simulator import EMS, BatteryOnlyEMS, Simulator
+from hess.simulator import BatteryOnlyEMS, Simulator, TimedEMS
 
 TABLES = ROOT / "results" / "tables"
 FIG = ROOT / "results" / "figures"
@@ -41,29 +41,8 @@ COLORS = {"battery_only": "tab:gray", "battery_only_regen": "tab:brown",
           "flc": "tab:blue", "frl": "tab:red"}
 
 
-class Timed(EMS):
-    """Bir EMS'i sarar ve sc_request'in adım başına süresini ölçer."""
-
-    def __init__(self, inner: EMS):
-        self.inner, self.name, self.battery_regen = inner, inner.name, inner.battery_regen
-
-    def reset(self):
-        self.t, self.n = 0.0, 0
-        self.inner.reset()
-
-    def finish(self, soc_b, soc_sc):
-        self.inner.finish(soc_b, soc_sc)
-
-    def sc_request(self, p, sb, ss):
-        t0 = time.perf_counter()
-        r = self.inner.sc_request(p, sb, ss)
-        self.t += time.perf_counter() - t0
-        self.n += 1
-        return r
-
-    @property
-    def us(self):
-        return 1e6 * self.t / max(self.n, 1)
+# Zamanlama sarmalayıcısı src'ye taşındı (Adım 7.3); sc_recharge bayrağını da iletir.
+Timed = TimedEMS
 
 
 def make_ems(cfg):
