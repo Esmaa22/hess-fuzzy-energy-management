@@ -99,6 +99,9 @@ scs_flc:                     # Önerilen yöntem S1 (CP4, Adım 7.1, D-20…D-22
   # D-22: P_ch [W], bataryadan SC'ye şarj gücü (bara tarafı). CP4 §3 taslak değerleri.
   pch_levels: {Zero: 0, Low: 300, Medium: 700, High: 1200}
   pch_halfwidth: 100
+  # D-23: S2 varyantı. P_cap [W], bataryanın bara gücü tavanı (SoC_SC Low → Loose … High → Tight)
+  pcap_levels: {Tight: 2000, Mid: 3000, Loose: 4000}
+  pcap_halfwidth: 200
   universe_points: 1101     # çıktı evreni [min − hw, max + hw] seviyelerden otomatik kurulur (D-17)
 
 frl:                         # [1] + A-13…A-15, D-10…D-14

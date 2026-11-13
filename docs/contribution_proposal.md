@@ -223,3 +223,56 @@ Uzun deşarj, eğitim çevrimi, %100 / %100 başlangıç:
 - F0'a göre deşarj süresi −%1.9. Bu, yeniden şarjın dönüştürücü ve ESR kayıplarının bedeli.
 - A1 neredeyse F0 ile aynı. Kazancı yeniden şarj üretiyor, kural değişikliği tek başına yetmiyor.
 - Kesin sonuçlar 7.2'deki ayardan sonra 7.3'te (X1, X2) üretilecek.
+
+---
+
+## 10. Adım 7.2: Eşit bütçeli ayar
+
+**Yöntem** (`src/hess/tuning.py`, `experiments/proposed/tune.py`, ~50 s):
+- Her yöntem 4 parametreyle tanımlanıyor ve 24 değerlendirmeyle ayarlanıyor: başlangıç noktası + 23 Latin hiperküp noktası.
+- Tasarım tohumu bütün yöntemlerde aynı (seed 0). Bu yüzden aynı `i` aynı birim tasarım noktasına karşılık geliyor.
+- Yalnızca eğitim çevrimi kullanılıyor (seed 7); test çevrimleri hiç kullanılmıyor.
+- Deney uzun deşarj (X1 ile aynı koşul).
+- Amaç: uygun çözümler arasında en düşük tepe I_B (K1).
+- Uygunluk: t_dis ≥ 0.99 · t(B1) (K3) ve en düşük SoC_SC ≥ 0.10. Uygunsuz çözüme +1000 A ceza ekleniyor.
+- Ayarlı değerler `config/tuned.yaml` dosyasına yazılıyor. Sonraki deneyler bu değerleri `load_tuned()` ile okuyor.
+
+| Yöntem | Parametreler ve aralıklar | Başlangıç |
+|---|---|---|
+| C0 | P_th 2000–4500 W, P_lo 500–2500 W, P_ch 300–1800 W, hedef 0.50–0.95 | CP4 ön denemesinin en iyisi (3000 / 1500 / 1000 / 0.8) |
+| S1 | k_ch 0.4–1.6, k_csc 0.5–1.5, k_p 0.8–1.3, k_soc 0.75–1.2 (CP4 §3 taslağının çarpanları) | Hepsi 1 |
+| S2 | c_cap 2000–4500 W (C0'ın P_th aralığı), d_cap 0–1500 W, k_ch, k_soc | 3000 / 1000 / 1 / 1 |
+
+### Sonuç (eğitim çevrimi, 24 nokta / yöntem)
+
+| | En iyi tepe I_B | Medyan | En kötü | Std | Uygun | Çöken (SC boşalan) |
+|---|---|---|---|---|---|---|
+| C0 (crisp) | **57.1 A** | 83.4 A | 136.6 A | 27.3 | 17/24 | 6 |
+| S1 (SCS-FLC, pay) | 73.2 A | 90.5 A | **105.6 A** | **9.6** | **24/24** | **0** |
+| S2 (SCS-FLC, tavan) | 60.8 A | **77.8 A** | 135.2 A | 16.3 | 21/24 | 2 |
+
+(Karşılaştırma: F0'ın tepe I_B değeri 136.2 A, B1'inki 137.1 A.)
+
+Ayarlı değerler:
+- C0: P_th 2666 W, P_lo 756 W, P_ch 1713 W, hedef 0.91. Tepe I_B 57.1 A, en düşük SoC_SC 0.17.
+- S1: k_ch 1.35, k_csc 1.04, k_p 1.29, k_soc 1.05. Tepe I_B 73.2 A, en düşük SoC_SC 0.55.
+- S2: c_cap 2666 W, d_cap 192 W, k_ch 1.53, k_soc 1.16. Tepe I_B 60.8 A, en düşük SoC_SC 0.41.
+
+### Bulgular
+1. **En iyi durumda crisp kazanıyor (S1'e karşı yapısal neden).** C0 bataryayı tam P_th'de düz kırpıyor. S1 ise talebin bir *yüzdesini* SC'ye veriyor, yani yüksek talepte batarya payı da büyüyor. Bu yüzden S1'in en iyi tepe akımı C0'ın gerisinde kalıyor.
+2. **S1 en dayanıklı yöntem.** 24 noktanın hiçbirinde çökmüyor; en kötü durumu 105.6 A, standart sapması C0'ın üçte biri. Orantılı pay, SC boşalırken kendiliğinden küçülüyor (C_SC'nin SoC_SC Low sütunu). Bu bir doğal geri besleme.
+3. **D-23: S2 bu bulgudan sonra eklendi.** Amaç C0'ın düz kırpma yapısını korumak, eşiği ve şarjı ise bulanık geri beslemeye bağlamaktı.
+   - S2, en iyi durumda C0'a yaklaşıyor (60.8 A).
+   - Medyanda üç yöntemin en iyisi (77.8 A).
+   - Çöken nokta sayısı 6'dan 2'ye düşüyor.
+4. **Eşleştirilmiş karşılaştırma (aynı birim tasarım noktaları, S2 − C0).**
+   - S2, 24 noktanın 19'unda daha düşük tepe I_B veriyor. Medyan fark −2.6 A, Wilcoxon p = 0.015.
+   - İkisinin de uygun olduğu 17 noktada medyan fark yalnızca −0.7 A. Yani farkın çoğu C0'ın çöktüğü noktalardan geliyor: S2'nin üstünlüğü ortalama performansta değil, dayanıklılıkta.
+   - Not: Eşleştirme birim koordinatlar üzerinden. 1. ve 3. boyutlar (eşik / tavan ve şarj gücü) fiziksel olarak karşılık geliyor, 2. ve 4. boyutlar farklı parametreler.
+5. **Ayarlanan S2'de tavan yayılımı küçük çıktı (d_cap = 192 W).** Eğitim çevriminde SoC'ye uyarlanan tavanın katkısı sınırlı; S2'nin kazancı büyük ölçüde bulanık şarj yasasından geliyor (P_ch, SoC_SC arttıkça sürekli azalıyor; crisp'te ise aç-kapa). Bu iddia X2'de S2 için ek ablasyonla sınanacak: d_cap = 0 olan S2 ile C0'ın şarj kuralını kullanan S2 karşılaştırılacak.
+6. **Aralık sınırları.** S1'de en iyi noktalar k_p ve k_ch aralıklarının üst ucuna yakın (1.29 / 1.3 ve 1.35–1.57 / 1.6). Daha geniş bir aralık S1'i biraz iyileştirebilirdi. Bütçe eşitliğini bozmamak için aralıklar sonradan genişletilmedi; Limitations bölümünde belirtilecek.
+
+### Sonraki adımlar için sonuç
+- K1 eğitim çevriminde üç yöntem için de sağlanıyor (F0'a göre tepe I_B −%46…−%58).
+- K4'ün "ortalama tepe ≤ C0" kısmı en iyi noktalar arasında tutmuyor: C0 < S2 < S1.
+- Ana sınama X3 (30 test çevrimi) ve X4'te olacak: ayarlı noktalar, görmedikleri çevrimlerde ve bozulan parametrelerde ne kadar dayanıklı?

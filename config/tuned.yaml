@@ -1,0 +1,19 @@
+_aciklama: experiments/proposed/tune.py tarafından üretildi; elle düzenlemeyin.
+egitim_cevrimi_seed: 7
+butce: 24
+t_B1_s: 7235.0
+C0:
+  p_th: 2665.5995
+  p_lo: 755.7767
+  p_ch: 1712.8619
+  target: 0.9079
+S1:
+  k_ch: 1.3463
+  k_csc: 1.0417
+  k_p: 1.2935
+  k_soc: 1.0548
+S2:
+  c_cap: 2665.5995
+  d_cap: 191.8325
+  k_ch: 1.5303
+  k_soc: 1.1579
