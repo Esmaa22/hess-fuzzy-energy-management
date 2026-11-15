@@ -36,8 +36,8 @@ Referans makale [R0] dördüncü grupta yer alır: Mamdani FLC ve tablo tabanlı
 | 2 | Xu vd., 2021 [3] | EV, batarya + ultrakapasitör | Tablo Q-learning (UDDS'de eğitim, WLTP'de doğrulama), PSO ile optimize edilmiş iki kural tabanlı EMS ile karşılaştırma | Batarya yaşlanmasında %13–20 yavaşlama, menzilde %1.5–2 artış (SC'siz araca göre) | [W] | + |
 | 3 | Xu vd., 2022 [4] | EV, batarya + ultrakapasitör | Hiyerarşik Q-learning (Q1: güç oranı, Q2: SC devreye alma) | Kapasite kaybında iki baseline yönteme göre %8, ultrakapasitörsüz araca göre %12 azalma | [W] | + |
 | 4 | Guo, Li, Outbib, 2022 [5] | Yakıt hücreli HEV | Fuzzy Q-learning: bulanık mantıkla değer fonksiyonu yaklaşıklığı, yakıt hücresi başlatma cezası | Sürekli durum ve eylem uzayı, model gerektirmeden kendi kendine öğrenme; Python tabanlı eğitim ve test | [W] | + |
-| 5 | Yang vd., 2024 [6] | Yakıt hücreli araç + batarya | Topluluk öğrenmesi ve karar ağacıyla yol tanıma + fuzzy Q-learning | Çevrimiçi güç dağılımı; yol örüntüsüne göre farklı eylem uzayları; benzetim ve donanım testi | [W] | ~ (ilk yazarın adı ve sayfa aralığı bulunamadı) |
-| 6 | Ariche vd., 2025 [7] | BEV (tek kaynak) | Fuzzy Q-learning controller (FQLC), motor güç katsayısı | Hız, eğim ve SoC'ye göre uyarlamalı güç kontrolü; FLC ile karşılaştırma | [W] | ~ (cilt ve makale no bulunamadı) |
+| 5 | Yang vd., 2024 [6] | Yakıt hücreli araç + batarya | Topluluk öğrenmesi ve karar ağacıyla yol tanıma + fuzzy Q-learning | Çevrimiçi güç dağılımı; yol örüntüsüne göre farklı eylem uzayları; benzetim ve donanım testi | [W] | + (künye DOI ile doğrulandı; sayfa aralığı bulunamadı, DOI ile verildi) |
+| 6 | Ariche vd., 2025 [7] | BEV (tek kaynak) | Fuzzy Q-learning controller (FQLC), motor güç katsayısı | Hız, eğim ve SoC'ye göre uyarlamalı güç kontrolü; FLC ile karşılaştırma | [W] | + |
 | 7 | Xiong, Cao, Yu, 2018 [8] | PHEV, batarya + SC | Q-learning tabanlı gerçek zamanlı güç yönetimi | Kural tabanlı EMS'ye göre toplam enerji kaybında %16.8 azalma | [W] | + |
 | 8 | Wu vd., 2023 [9] | EV, batarya + SC | PPO (derin RL) + sürüş stili tanıma | Sürüş stili %95'in üzerinde doğrulukla tanınıyor, kapasite kaybı maliyetinde %3.30–4.19 azalma | [W] | + |
 | 9 | Liu vd., 2025 [10] | EV, HESS | Taklit (adversarial imitation) RL | Batarya kapasite kaybı maliyetini en aza indirme; %5–12 azalma ([1]'in aktarımı) | [R] | ~ (künye doğrulandı, sayı yalnızca [1]'den) |
@@ -97,9 +97,9 @@ Proje [1]'i Python'da açık kaynak olarak yeniden üretir. Literatürde sık g�
 
 [5] L. Guo, Z. Li, and R. Outbib, "A lifetime extended energy management strategy for fuel cell hybrid electric vehicles via self-learning fuzzy reinforcement learning," in *Proc. 10th Int. Conf. Syst. Control (ICSC)*, Marseille, France, 2022, pp. 161–167, doi: 10.1109/ICSC57768.2022.9993916.
 
-[6] Yang *et al.*, "An online energy management strategy for fuel cell vehicles based on fuzzy Q-learning and road condition recognition," *IEEE Trans. Intell. Transp. Syst.*, vol. 25, p. 12120, 2024, doi: 10.1109/TITS.2024.3368149. *(Not: İlk yazarın adı ve sayfa aralığı teyit edilemedi. Rapora girmeden önce DOI açılıp tamamlanmalı; tamamlanamazsa kaynak çıkarılmalı.)*
+[6] D. Yang, S. Wang, Y. Liao, and R. Pan, "An online energy management strategy for fuel cell vehicles based on fuzzy Q-learning and road condition recognition," *IEEE Trans. Intell. Transp. Syst.*, vol. 25, no. 9, Sep. 2024, doi: 10.1109/TITS.2024.3368149.
 
-[7] S. Ariche, Z. Boulghasoul, A. El Ouardi, A. Elbacha, A. Tajer, and S. Espié, "Enhancing energy management in battery electric vehicles: A novel approach based on fuzzy Q-learning controller," *Eng. Sci. Technol., Int. J.*, Jul. 2025. *(Not: Cilt, makale no ve DOI teyit edilemedi. ScienceDirect PII: S2215098625001259. Rapora girmeden önce tamamlanmalı.)*
+[7] S. Ariche, Z. Boulghasoul, A. El Ouardi, A. Elbacha, A. Tajer, and S. Espié, "Enhancing energy management in battery electric vehicles: A novel approach based on fuzzy Q-learning controller," *Eng. Sci. Technol., Int. J.*, vol. 67, Jul. 2025, Art. no. 102070, doi: 10.1016/j.jestch.2025.102070.
 
 [8] R. Xiong, J. Cao, and Q. Yu, "Reinforcement learning-based real-time power management for hybrid energy storage system in the plug-in hybrid electric vehicle," *Appl. Energy*, vol. 211, pp. 538–548, 2018, doi: 10.1016/j.apenergy.2017.11.072.
 
