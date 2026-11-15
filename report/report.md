@@ -73,7 +73,7 @@ Batarya/SC HESS'leri için EMS'ler genel olarak kural tabanlı, optimizasyon tab
 Table: İlgili çalışmaların karşılaştırması. \label{tab:lit}
 
 | Çalışma | Sistem | Yöntem | Bulanık mantığın rolü |
-|---|---|---|---|
+|----------------|--------------------|------------------------------|------------------------|
 | [1] (referans) | E2W, batarya + SC | Mamdani FLC + tablo Q-learning | Taban kontrolcü |
 | [2] | EV, batarya + SC | Yol tanıma + D3FQN | Q-ağı yaklaşıklayıcı |
 | [3], [4] | EV, batarya + UC | Tablo / hiyerarşik Q-learning | Yok |
@@ -134,7 +134,7 @@ Referans makale [1], şehir içinde kullanılan bir elektrikli scooter için akt
 Table: Referans sistemin temel parametreleri [1]. \label{tab:params}
 
 | Bileşen | Değer |
-|---|---|
+|------------------|--------------------------------------------------------------|
 | Motor | 6.2 kW, 26 N·m; tekerlek yarıçapı 0.23 m |
 | Aerodinamik | Ön alan 0.88 m², $C_d$ = 0.22; aktarma verimi 0.95 |
 | Batarya | 18650 NMC hücre (3.35 Ah, 3.6 V), 14s×22p: 50.4 V, 73.7 Ah, 3.7 kWh |
@@ -163,7 +163,7 @@ FRL'de ajanın durumu, FLC girdilerinin dilsel kategorileridir ($3 \times 3 \tim
 Table: Referans makalenin ödül fonksiyonu [1, Denk. 5]. \label{tab:reward}
 
 | Koşul | Ödül |
-|---|---:|
+|----------------------------------------------------------------------|-------:|
 | $P_{dem} < 0$, $C_B = 0$ ve $C_{SC} > 0$ (fren enerjisi SC'ye) | +1 |
 | $P_{dem} > 0$ ve $C_{SC} \geq 50\%$ | +0.5 |
 | $P_{dem} > 0$ ve $C_{SC} = C_B$ | 0 |
@@ -264,7 +264,7 @@ Bütün yöntemler aynı simülatörü, güvenlik katmanını, dönüştürücü
 Table: Deneyler. \label{tab:exp}
 
 | Kod | Deney | Koşul |
-|---|---|---|
+|--------|----------------------------------------------------------|------------------------|
 | E1–E3 | Üç senaryo: akım, sıcaklık, SoC, güç paylaşımı | Uzun deşarj ve ilk çevrim |
 | E4 | DC/DC verim taraması, $\eta_c$ = 0.91–1.00 | Uzun deşarj |
 | E6 | Rejenerasyonlu sadece-batarya (B1) | Uzun deşarj |
@@ -287,7 +287,7 @@ Tablo \ref{tab:repro}, yeniden üretimin sonuçlarını makaleyle yan yana göst
 Table: Makale [1] ve yeniden üretim (E1, E2). B0: sadece batarya. FRL için 5 tohumun ortalaması ± std. "Uzun": %100 → %20 SoC deşarjı; "ilk çevrim": SC dolu iken ilk 900 s. Menzil makalenin tanımıyla hesaplanmıştır. \label{tab:repro}
 
 | Ölçüt | Makale B0 | Makale FLC | Makale FRL | Bizim B0 | Bizim F0 (FLC) | Bizim R0 (FRL) |
-|---|---:|---:|---:|---:|---:|---:|
+|--------------------------|---------:|----------:|----------:|---------:|-------------:|--------------:|
 | Tepe $I_B$, uzun (A) | 132 | 102 | 97.9 | 137.1 | 136.2 | 132.9 ± 4.4 |
 | Tepe $I_B$, ilk çevrim (A) | – | – | – | 117.0 | 86.2 | 103.9 ± 3.9 |
 | RMS $I_B$ (A) | 40.40 | 39.69 | 36.10 | 48.0 | 43.6 | 43.4 ± 0.3 |
@@ -310,7 +310,7 @@ Tablo \ref{tab:main}, önerilen yöntemi referans FLC (baseline) ve crisp rakip 
 Table: Baseline (F0) ile önerilen yöntemlerin karşılaştırması. X1: eğitim çevrimi; X3: 30 görülmemiş çevrim; X4: tek parametrenin ±%20 bozulması; X5: ölçüm gürültüsü σ = 0.05. Son sütun S2'nin F0'a göre değişimidir. \label{tab:main}
 
 | Ölçüt | F0 (FLC) | C0 (crisp) | S1 | **S2** | S2 / F0 |
-|---|---:|---:|---:|---:|---:|
+|------------------------------|-------------:|-------------:|------------:|--------------:|-------------:|
 | X1 tepe $I_B$ (A) | 136.2 | 57.1 | 73.2 | **60.8** | −%55.3 |
 | X1 RMS $I_B$ (A) | 43.6 | 35.9 | 37.2 | 36.0 | −%17.3 |
 | X1 $\Delta T$ (°C) | 1.88 | 1.15 | 1.27 | 1.18 | −%37.6 |
