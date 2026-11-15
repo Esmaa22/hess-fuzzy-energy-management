@@ -55,7 +55,7 @@ def main():
 
     # Kaynaklar ve dönüştürücüler (sol)
     box(ax, 0.3, 3.0, 2.0, 1.05, "Batarya", "14s×22p NMC\n50.4 V, 73.7 Ah, 3.7 kWh")
-    box(ax, 0.3, 0.4, 2.0, 1.05, "Süperkapasitör", "18s×15p\n48 V, ≈417 F", edge=GREEN, lw=1.6)
+    box(ax, 0.3, 0.4, 2.0, 1.05, "Süperkapasitör", "18s×15p\n48 V, 406 F", edge=GREEN, lw=1.6)
     box(ax, 2.85, 3.1, 1.3, 0.85, "DC/DC", "tek yönlü")
     box(ax, 2.85, 0.5, 1.3, 0.85, "DC/DC", "çift yönlü")
     arrow(ax, (2.3, 3.52), (2.85, 3.52))

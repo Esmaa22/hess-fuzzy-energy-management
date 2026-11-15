@@ -2,9 +2,9 @@
 lang: tr
 mainfont: Liberation Serif
 monofont: DejaVu Sans Mono
-fontsize: 11pt
-geometry: "a4paper,margin=2.3cm"
-linestretch: 1.15
+fontsize: 10pt
+geometry: "a4paper,margin=2.0cm"
+linestretch: 1.08
 colorlinks: true
 linkcolor: black
 urlcolor: blue
@@ -41,6 +41,7 @@ urlcolor: blue
 **Anahtar kelimeler:** bulanık mantık, Mamdani çıkarımı, fuzzy Q-learning, hibrit enerji depolama, süperkapasitör, enerji yönetim stratejisi, elektrikli iki tekerlekli araç
 
 ```{=latex}
+\setcounter{tocdepth}{1}
 \tableofcontents
 \newpage
 ```
@@ -137,7 +138,7 @@ Table: Referans sistemin temel parametreleri [1]. \label{tab:params}
 | Motor | 6.2 kW, 26 N·m; tekerlek yarıçapı 0.23 m |
 | Aerodinamik | Ön alan 0.88 m², $C_d$ = 0.22; aktarma verimi 0.95 |
 | Batarya | 18650 NMC hücre (3.35 Ah, 3.6 V), 14s×22p: 50.4 V, 73.7 Ah, 3.7 kWh |
-| Süperkapasitör | 500 F / 2.7 V hücre, 18s×15p: 48 V, ≈417 F, ≈136 Wh |
+| Süperkapasitör | 500 F / 2.7 V hücre, 18s×15p: 48 V, 406 F, 12 mΩ |
 | DC/DC | 50 kHz, hedef verim %96 |
 | Sürüş verisi | Gerçek sürüş, 900 s, 12.4 km, en yüksek hız 83 km/h |
 
@@ -176,15 +177,106 @@ Makale, deneyleri MATLAB/Simulink'te ve bir donanım test düzeneğinde yapmış
 
 # Reproduction Methodology (Yeniden Gerçekleştirme Yöntemi)
 
-> **[9.4]** Python yazılım mimarisi (`src/hess/` modülleri). Kendi Mamdani motorumuz. Makalede eksik olan parametreler için verilen kararlar (D-xx; araç kütlesi, yuvarlanma direnci, sıcaklık kalibrasyonu hA = 0.0846 W/K). Sürüş çevrimi üretimi. Güvenlik katmanı. FRL eğitimi (5 seed). Doğrulama: birim testleri (96 test). *(~1.2 sayfa)*
+## Yazılım yapısı
+
+Yöntem, harici bir bulanık mantık ya da RL kütüphanesi kullanılmadan Python'da yazılmıştır. Böylece kodun her satırı açıklanabilir. Bütün parametreler `config/default.yaml` dosyasında tutulur ve rastgelelik her yerde tohum (seed) ile kontrol edilir. `src/hess/` paketi şu modüllerden oluşur:
+
+- Fiziksel modeller: `drive_cycle`, `vehicle`, `battery`, `supercap`.
+- Benzetim döngüsü ve güvenlik katmanı: `simulator`.
+- Mamdani motoru: `fuzzy`.
+- Denetleyiciler: `flc_ems` (36 kural), `qlearning` ile `frl_ems` (FRL), `scs_flc` ve `crisp_ems` (Bölüm 6).
+- Ölçütler: `metrics`.
+
+Doğruluk 96 birim testiyle kontrol edilir. Örneğin 36 kuralın her biri, tek başına tam ateşlendiği noktada Tablo 5'teki değeri birebir üretir. Kinetik enerji kapalı bir çevrimde korunur.
+
+## Modeller ve eksik parametreler için kararlar
+
+Makalede verilmeyen her nokta için bir varsayım (A-xx) ya da tasarım kararı (D-xx) alınmış ve gerekçesiyle `docs/implementation_plan.md` dosyasına yazılmıştır. Başlıcaları:
+
+- **Zaman adımı ve sürüş profili.** $\Delta t = 1$ s seçilmiştir. Gerçek sürüş verisi paylaşılmadığı için, makalenin raporladığı altı istatistiğe uyan sentetik bir şehir içi profil üretilmiştir: 900 s, 12.4 km, en yüksek hız 83 km/h, +2.7 / −2.6 m/s². Profil duraklar arasındaki kısa yolculuklardan oluşur. Seyir bölümlerine telefon kaydındaki küçük hız dalgalanmalarını taklit eden AR(1) gürültüsü eklenmiştir. Uzun deşarj testinde profil, $SoC_B$ %20'ye inene kadar tekrarlanır.
+- **Araç.** Toplam kütle 195 kg (araç 120 kg, sürücü 75 kg), yuvarlanma katsayısı 0.015, motor ve inverter verimi 0.90 alınmıştır. Talep 6.2 kW'ta sınırlanır.
+- **Batarya.** $R_{int}$ eşdeğer devresi kullanılmıştır: NMC açık devre gerilimi eğrisi ve 30 mΩ hücre direnci. Termal model birinci derecedendir: $m c_p\, dT/dt = I^2 R - hA\,(T - T_{amb})$. $hA = 0.0846$ W/K değeri, sadece-batarya senaryosunda makaledeki 2.1 °C artışı verecek şekilde bir kez kalibre edilip sabitlenmiştir.
+- **Süperkapasitör ve dönüştürücüler.** SC, ideal kapasitör ve seri dirençle modellenmiştir (406 F, 12 mΩ). $SoC_{SC}$ enerji tabanlı tanımlanmıştır ($V_{min} = V_{max}/2$), bu tanımla kullanılabilir enerji ≈ 98 Wh'tir. İki dönüştürücünün verimi de sabit 0.96'dır.
+- **Güvenlik katmanı.** Bütün EMS'ler için ortaktır. SC'nin karşılayamadığı çekiş gücü bataryadan alınır, fazla fren enerjisi mekanik frene gider.
+- **FLC'nin üyelik fonksiyonları.** Yamuk tip korunmuş, köşe noktaları komşu terimler %50 örtüşecek şekilde seçilmiştir (Şekil \ref{fig:mf}). Bu yapıda her girdi değerinin üyelik derecelerinin toplamı 1'dir (Ruspini bölümlemesi). Çıktı seviyeleri ±5 genişlikli üçgenlerle temsil edilmiştir. Çıktı evreni $[-5, 105]$ alınmıştır, böylece ağırlık merkezi uç değerlerde içe doğru kaymaz.
+
+![Referans FLC'nin üyelik fonksiyonları ($SoC_B$, $SoC_{SC}$, $P_{dem}$ ve çıktılar).](results/figures/flc_membership.png){#fig:mf width=88%}
+
+## FRL'nin uygulanması
+
+FRL'nin durumu, her girdinin en yüksek üyelikli dilsel terimidir (36 durum). Makalede eylem kümesi tanımlanmadığı için, RL'nin FLC kararını düzelttiği fikri şöyle uygulanmıştır: eylem, FLC'nin $C_{SC}$ çıktısına eklenen $\Delta \in \{-20, -10, 0, +10, +20\}$ yüzde puandır. $\Delta = 0$, FLC kararını aynen uygulamak anlamına gelir. Ödül (Tablo \ref{tab:reward}) aynen uygulanmıştır, koşullar örtüştüğü için ilk eşleşen koşul geçerli sayılır. Rejenerasyon durumlarında FLC kararı değiştirilmez. Ajan 1000 bölümle eğitilir. Her bölüm, rastgele başlangıç SoC'leriyle profilin bir geçişidir. Eğitim 5 farklı tohumla tekrarlanır ve sonuçlar ortalama ± standart sapma olarak verilir. Değerlendirmede açgözlü politika kullanılır. Hiç öğrenilmemiş durumlarda $\Delta = 0$ seçildiği için, Q tablosu sıfırken FRL birebir FLC gibi davranır.
 
 # Proposed Extension (Önerilen Geliştirme)
 
-> **[9.4]** Gerekçe: literal FLC'de SC'nin ~1070 s'de tükenmesi ve FRL ödülünün tutarsızlığı. S1 ve S2 SCS-FLC: 2 girdi (P_dem, SoC_SC), 12 kural, çıktılar (C_SC / P_cap ve P_ch). Bataryadan SC şarjı (D-20). Kural tablosu (Tablo 2) ve üyelik fonksiyonları. Karşılaştırma için ayarlı crisp kural tabanlı C0. Başarı kriterleri K1–K5. *(~1.2 sayfa)*
+## Gerekçe
+
+Yeniden üretim iki yapısal sorun göstermiştir (Bölüm 8.1). (i) Tablo \ref{tab:rules}, düşük ve orta talepte de SC'ye pay verir ve bataryadan SC şarjı içermez. Bu yüzden SC uzun sürüşün ilk ~1070 s'sinde boşalır ve tepe akım kazancı kaybolur. (ii) Q-learning katmanı bu sorunu çözmez: ödül monoton olmadığından ajan, SC'yi korumayı ancak onu kullanmaktan vazgeçerek öğrenir. Bu bulgular sorunun öğrenme katmanında değil kural tabanında olduğunu gösterir. SC'nin enerjisi (≈98 Wh) bataryanınkinin yalnızca ~%2.6'sı kadardır. Bu yüzden SC bir enerji kaynağı olarak değil, bir **güç tamponu** olarak kullanılmalıdır: yüksek talepte devreye girmeli, düşük talepte yeniden doldurulmalıdır.
+
+Bu fikir, ön denemede basit bir crisp kuralla sınanmıştır: eşiğin üstündeki talebi SC'ye vermek ve düşük talepte SC'yi şarj etmek. Kural uzun deşarjda tepe akımı yarıya indirmiştir, ancak kırılgan çıkmıştır. Eşik ya da şarj gücü biraz değişince SC yine boşalmış ve kazanç tamamen kaybolmuştur (−%53'ten −%1.3'e). Bulanık mantığın buradaki gerekçesi, kararın $SoC_{SC}$'nin **sürekli** bir fonksiyonu olmasıdır. SC boşaldıkça SC'nin kullanımı azalır ve şarj artar. Bu doğal geri besleme, SC'nin doluluğunu parametre ayarına bağımlı olmadan bir bantta tutmalıdır.
+
+## SoC-duyarlı SCS-FLC
+
+Önerilen denetleyicinin adı **SCS-FLC**'dir (*supercapacitor-sustaining FLC*). İki girdisi vardır: $P_{dem}$ ve $SoC_{SC}$. Üyelik fonksiyonları referans FLC ile aynı tutulmuştur, böylece fark yalnızca kurallardan gelir. $SoC_B$ girdisi Tablo \ref{tab:rules}'de neredeyse hiç etki göstermediği için çıkarılmıştır; gerekliliği ayrı bir ablasyonla sınanmıştır. Kural sayısı $4 \times 3 = 12$'ye iner. Çıkarım Bölüm 3.2'deki Mamdani motoruyla yapılır. İki varyant vardır, ikincisi ana katkıdır:
+
+- **S1 (pay):** Birinci çıktı $C_{SC}$'dir, talebin SC'ye giden yüzdesi: $P_{SC} = C_{SC} P_{dem}/100 - P_{ch}$.
+- **S2 (tavan):** Birinci çıktı $P_{cap}$'tir, bataryanın güç tavanı. SC yalnızca tavanın üstünde kalan talebi karşılar: $P_{SC} = \max(P_{dem} - P_{cap}, 0) - P_{ch}$. $P_{cap}$ yalnızca $SoC_{SC}$'ye bağlıdır: *Low* → *Loose* (yüksek tavan, SC korunur), *Medium* → *Mid*, *High* → *Tight* (düşük tavan, dolu SC daha çok çalışır).
+- **İki varyantta ortak yeni çıktı $P_{ch}$:** Bataryadan SC'ye şarj gücüdür. Simülatörde tek değişiklik, çekiş sırasında bu şarja izin verilmesidir (Şekil \ref{fig:arch}'deki turuncu yol). Batarya bu durumda da yalnızca deşarj eder. Frenlemede enerjinin tamamı SC'ye yönlendirilir.
+
+Table: SCS-FLC kural tabanı: $C_{SC}$ (S1) ve $P_{ch}$. S2'de $P_{ch}$ kuralları aynıdır, $P_{cap}$ yalnızca $SoC_{SC}$ sütununa bağlıdır (Loose / Mid / Tight). Ayar öncesi seviyeler: $C_{SC}$: Z = 0, VS = 10, S = 20, M = 25, L = 45, VL = 60, Full = 100 %; $P_{ch}$: 0 / 300 / 700 / 1200 W. \label{tab:scs}
+
+| $P_{dem}$ \\ $SoC_{SC}$ | Low | Medium | High |
+|---|:---:|:---:|:---:|
+| Low | Z / **High** | Z / Medium | Z / Zero |
+| Medium | Z / Low | VS / Zero | M / Zero |
+| High | S / Zero | L / Zero | VL / Zero |
+| Regeneration | Full / Zero | Full / Zero | Full / Zero |
+
+Kurallar dilsel olarak şöyle okunur: "Talep yüksekse ve SC doluysa yükü SC'ye ver" (son satırlar) ve "Talep düşükse ve SC boşalmışsa bataryadan SC'yi doldur" (ilk sütun). $P_{ch}$, $SoC_{SC}$ arttıkça High → Medium → Zero olarak **sürekli** azalır. S2'nin dayanıklılığını bu bulanık şarj yasasının sağladığı Bölüm 8.2'de ablasyonla gösterilmiştir.
+
+## Karşılaştırma grubu ve başarı ölçütleri
+
+Bulanıklığın etkisini tek başına ölçmek için aynı fikri keskin eşiklerle uygulayan **C0** (crisp) kural tabanlı bir EMS kurulmuştur. C0'da talep $P_{th}$'yi aşınca fazlasını SC karşılar. Talep $P_{lo}$'nun altındaysa ve $SoC_{SC}$ hedefin altındaysa batarya SC'yi sabit $P_{ch}$ ile şarj eder. Başarı ölçütleri deneylerden **önce** tanımlanmıştır:
+
+- **K1:** Uzun deşarjda tepe $I_B$ F0'dan en az %30 düşük olmalı ve en düşük $SoC_{SC} \geq 0.10$ kalmalı.
+- **K2:** RMS, $I^2t$ ve $\Delta T$, F0 ve R0'dan düşük olmalı.
+- **K3:** Deşarj süresi B1'den en fazla %1 kısa olmalı.
+- **K4:** Bulanık sürüm crisp'ten daha dayanıklı olmalı. Görülmemiş çevrimlerde ortalama ve en kötü tepe akım C0'dan iyi ($p < 0.05$), parametre bozulmasında kötüleşme C0'dan küçük olmalı.
+- **K5:** Her bileşen (yeniden şarj, kural tabanı, uyarlamalı tavan) anlamlı bir katkı vermeli.
 
 # Experimental Setup (Deney Düzeni)
 
-> **[9.4]** Yazılım ortamı (Python 3.13, NumPy, SciPy, pandas, Matplotlib, PyYAML, Streamlit; donanım). Deney listesi (Tablo 3): E1–E4 (yeniden üretim), X1–X5 (katkı). Eşit bütçeli ayar (24 değerlendirme, LHS). 30 görülmemiş test çevrimi (seed 101–110 × sakin/nominal/agresif). Performans ölçütleri: tepe/RMS batarya akımı, min SoC_SC, deşarj süresi, çöküş sayısı. İstatistik test (Wilcoxon). *(~0.6 sayfa)*
+**Ortam.** Python 3.13 kullanılmıştır. Kütüphaneler NumPy, SciPy (Wilcoxon testi), pandas, Matplotlib, PyYAML, pytest ve canlı demo için Streamlit'tir; sürüm alt sınırları `requirements.txt` dosyasındadır. Deneyler yalnızca CPU ile koşturulmuştur (macOS dizüstü bilgisayar; FRL eğitimi Linux bulut ortamında). FRL eğitimi tohum başına ~5 dk, bütün katkı deneyleri toplam ~5 dk sürer. Her deney, `experiments/` altındaki tek bir betikle yeniden üretilebilir.
+
+**Karşılaştırılan yöntemler.**
+
+- B0: sadece batarya, makaledeki gibi rejenerasyonsuz.
+- B1: sadece batarya, rejenerasyonlu. Rejenerasyonun katkısını ayırmak için eklenmiş adil baseline.
+- F0: referans FLC.
+- R0: referans FRL.
+- C0: crisp kural tabanı.
+- S1, S2: önerilen yöntem.
+- A1–A5: ablasyonlar.
+
+Bütün yöntemler aynı simülatörü, güvenlik katmanını, dönüştürücü verimini ve başlangıç koşulunu ($SoC_B = SoC_{SC} = 1$) kullanır. Hiçbir HESS yönteminde batarya frenlemede şarj olmaz.
+
+**Adil ayar.** C0, S1 ve S2'nin her biri dört parametreyle tanımlanmış ve **eşit bütçeyle** ayarlanmıştır: başlangıç noktası ve 23 Latin hiperküp noktası, yöntem başına 24 değerlendirme. Ayar yalnızca eğitim çevriminde (tohum 7) yapılmıştır. Amaç, $SoC_{SC} \geq 0.10$ ve K3 kısıtları altında tepe $I_B$'yi en aza indirmektir. S2 için ayarlanan parametreler tavanın merkezi ve yayılımı ($c_{cap} = 2666$ W, $d_{cap} = 192$ W) ile $P_{ch}$ ve $SoC_{SC}$ üyelik fonksiyonlarının ölçek çarpanlarıdır ($k_{ch} = 1.53$, $k_{soc} = 1.16$). Ayarlı değerler `config/tuned.yaml` dosyasındadır.
+
+Table: Deneyler. \label{tab:exp}
+
+| Kod | Deney | Koşul |
+|---|---|---|
+| E1–E3 | Üç senaryo: akım, sıcaklık, SoC, güç paylaşımı | Uzun deşarj ve ilk çevrim |
+| E4 | DC/DC verim taraması, $\eta_c$ = 0.91–1.00 | Uzun deşarj |
+| E6 | Rejenerasyonlu sadece-batarya (B1) | Uzun deşarj |
+| X1 | Bütün yöntemlerin ana karşılaştırması | Eğitim çevrimi, uzun deşarj |
+| X2 | Ablasyonlar A1–A5 | Eğitim çevrimi |
+| X3 | Genelleme: 30 görülmemiş çevrim (tohum 101–110 × sakin / nominal / agresif) | Uzun deşarj |
+| X4 | Parametre duyarlılığı: her parametre tek tek ±%10, ±%20 | Eğitim çevrimi |
+| X5 | Ölçüm gürültüsü: $SoC_{SC}$ ve $P_{dem}$'e Gauss gürültüsü, σ = 0.02, 0.05 | Eğitim çevrimi, 5 tohum |
+
+X3'teki üç rejim, seyirdeki hız dalgalanmasının genliğiyle ayrılır (0.5 / 1.0 / 1.5 m/s). Altı temel istatistik bütün çevrimlerde aynıdır. Rejimler arasında değişen talebin dağılımıdır: ortalama çekiş gücü 1.8 / 2.4 / 2.8 kW.
+
+**Ölçütler.** Ana ölçüt, uzun deşarj (%100 → %20) boyunca tepe batarya akımıdır. Bunun yanında %99'luk batarya akımı, RMS akım, $I^2t$, sıcaklık artışı $\Delta T$, deşarj süresi, en düşük $SoC_{SC}$ ve adım başına karar süresi raporlanır. SC'nin boşalıp tepe akımın sadece-batarya seviyesine döndüğü çalıştırmalar **çökme** olarak sayılır. X3'te yöntemler aynı 30 çevrim üzerinde eşleştirilmiş Wilcoxon işaretli sıra testiyle karşılaştırılır. Makaleyle karşılaştırmada sürüş profili ve hücre modeli farklı olduğu için mutlak değerler yerine **göreli değişimler** ve sıralama kullanılır.
 
 # Results (Sonuçlar)
 
