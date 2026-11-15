@@ -1,0 +1,17 @@
+% report.md için LaTeX ön ayarları (build.sh tarafından pandoc'a verilir)
+\usepackage{titlesec}
+\titlelabel{\thetitle.\quad}
+\usepackage{float}
+\floatplacement{figure}{htbp}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,labelsep=period}
+\usepackage{booktabs}
+\usepackage{xurl}
+\setlength{\emergencystretch}{3em}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Bulanık Mantık Dönem Projesi}
+\fancyhead[R]{\small E. Mutlu -- 1306220051}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
