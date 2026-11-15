@@ -96,7 +96,7 @@ Klasik kümelerde bir eleman kümeye ya aittir ya da değildir. Zadeh'in bulanı
 
 $$\mu_{\mathrm{trap}}(x; a,b,c,d) = \max\left(\min\left(\frac{x-a}{b-a},\, 1,\, \frac{d-x}{d-c}\right),\, 0\right).$$
 
-**Dilsel değişken**, değerleri sözcüklerle ifade edilen bir değişkendir. Örneğin "süperkapasitör SoC'si" değişkeni *Low*, *Medium* ve *High* terimlerini alır ve her terim bir bulanık kümeyle temsil edilir. **Bulanıklaştırma**, ölçülen keskin bir girdi değerinin her terimdeki üyelik derecesinin hesaplanmasıdır. Örneğin $SoC_{SC} = 0.45$ değeri aynı anda kısmen *Low*, kısmen *Medium* olabilir. Komşu terimler arasındaki bu örtüşme, denetleyicinin çıktısının girdiyle birlikte sıçramadan, sürekli değişmesini sağlar.
+**Dilsel değişken**, değerleri sözcüklerle ifade edilen bir değişkendir. Örneğin "süperkapasitör SoC'si" değişkeni *Low*, *Medium* ve *High* terimlerini alır ve her terim bir bulanık kümeyle temsil edilir. **Bulanıklaştırma**, ölçülen keskin bir girdi değerinin her terimdeki üyelik derecesinin hesaplanmasıdır. Örneğin bu projedeki üyelik fonksiyonlarıyla $SoC_{SC} = 0.30$ değeri 0.5 derecesiyle *Low*, 0.5 derecesiyle *Medium* kümesine aittir. Komşu terimler arasındaki bu örtüşme, denetleyicinin çıktısının girdiyle birlikte sıçramadan, sürekli değişmesini sağlar.
 
 ## Kural tabanı ve Mamdani çıkarımı
 
