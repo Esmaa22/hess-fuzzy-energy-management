@@ -36,7 +36,7 @@ urlcolor: blue
 
 # Özet {.unnumbered}
 
-> **[9.5'te yazılacak]** 150–200 kelime: problem, yeniden üretim, temel bulgular (literal FLC'de SC'nin tükenmesi, FRL > FLC'nin yeniden üretilememesi), katkı (S2 SCS-FLC), sayısal sonuçlar (30 görülmemiş çevrimde tepe akım, çöküş sayıları, p-değeri) ve dürüst olumsuz bulgu (uyarlamalı tavanın katkısı yok).
+Bu çalışmada, elektrikli iki tekerlekli araçların batarya/süperkapasitör hibrit enerji depolama sistemi için önerilen bulanık takviyeli öğrenme tabanlı enerji yönetim stratejisi [1] Python'da yeniden gerçekleştirilmiş ve geliştirilmiştir. Referans yöntem, 36 kurallı bir Mamdani bulanık denetleyiciden ve onu ayarlayan tablo Q-learning'den oluşur. Yeniden üretimde sadece-batarya baseline'ı makaleyle uyumlu çıkmıştır (tepe akım 137 A ve 132 A). Bulanık denetleyicinin tepe akım azalması süperkapasitör dolu iken yeniden üretilmiştir (−%26.3 ve −%22.7). Ancak kural tabanının süperkapasitörü uzun sürüşte ~1070 s içinde boşalttığı ve öğrenme katmanının üstünlüğünün istatistiksel olarak yeniden üretilemediği gösterilmiştir. Bu bulgulara dayanarak, süperkapasitörü bulanık bir yasayla bataryadan yeniden şarj eden iki girdili ve 12 kurallı bir Mamdani denetleyici (SCS-FLC) önerilmiştir. Önerilen yöntem, görülmemiş 30 sürüş çevriminde hiç çökmeden ortalama tepe batarya akımını referans denetleyiciye göre %55, eşit bütçeyle ayarlanmış kesin (crisp) kural tabanına göre %35 düşürmüştür (Wilcoxon $p = 1.7 \times 10^{-6}$). Crisp kural 30 çevrimin 14'ünde çökmüştür. Ablasyonlar, dayanıklılığın kaynağının süperkapasitör doluluğuyla sürekli değişen bulanık şarj yasası olduğunu, uyarlamalı güç tavanının ise anlamlı bir katkısı olmadığını göstermiştir.
 
 **Anahtar kelimeler:** bulanık mantık, Mamdani çıkarımı, fuzzy Q-learning, hibrit enerji depolama, süperkapasitör, enerji yönetim stratejisi, elektrikli iki tekerlekli araç
 
@@ -282,28 +282,157 @@ X3'teki üç rejim, seyirdeki hız dalgalanmasının genliğiyle ayrılır (0.5 
 
 ## Yeniden Üretim Sonuçları
 
-> **[9.5]** Sadece-batarya baseline: tepe 137 A (makale 132), deşarj süresi 6755 s (makale 6540). FLC ilk çevrim tepe azalması −%26.3 (makale −%22.7), uzun deşarjda −%0.7. FRL. E4 DC/DC verim taraması. ECR tanımı. Tablo 4 (makale ve yeniden üretim yan yana), Şekil 3 (`reproduction_summary.png` veya `E1_current.png`).
+Tablo \ref{tab:repro}, yeniden üretimin sonuçlarını makaleyle yan yana gösterir. Şekil \ref{fig:repro} ise sadece-bataryaya göre göreli değişimleri karşılaştırır.
+
+Table: Makale [1] ve yeniden üretim (E1, E2). B0: sadece batarya. FRL için 5 tohumun ortalaması ± std. "Uzun": %100 → %20 SoC deşarjı; "ilk çevrim": SC dolu iken ilk 900 s. Menzil makalenin tanımıyla hesaplanmıştır. \label{tab:repro}
+
+| Ölçüt | Makale B0 | Makale FLC | Makale FRL | Bizim B0 | Bizim F0 (FLC) | Bizim R0 (FRL) |
+|---|---:|---:|---:|---:|---:|---:|
+| Tepe $I_B$, uzun (A) | 132 | 102 | 97.9 | 137.1 | 136.2 | 132.9 ± 4.4 |
+| Tepe $I_B$, ilk çevrim (A) | – | – | – | 117.0 | 86.2 | 103.9 ± 3.9 |
+| RMS $I_B$ (A) | 40.40 | 39.69 | 36.10 | 48.0 | 43.6 | 43.4 ± 0.3 |
+| Sıcaklık artışı (°C) | 2.1 | 1.95 | 1.9 | 2.10 | 1.88 | 1.84 ± 0.03 |
+| Deşarj süresi (s) | 6540 | 6950 | 6990 | 6755 | 7477 | 7466 ± 19 |
+| Menzil (km) | 88.95 | 94.34 | 95.06 | 93.8 | 103.1 | 103.0 ± 0.3 |
+
+![Sadece-bataryaya göre göreli değişimler: makale ile yeniden üretimin ilk çevrim ve uzun deşarj sonuçları.](results/figures/reproduction_summary.png){#fig:repro width=72%}
+
+**Baseline.** Sadece-batarya modeli makaleyle uyumludur. Tepe akım +%3.9, deşarj süresi +%3.3 farklıdır, sıcaklık bu senaryoya kalibre edilmiştir. Makalenin tanımıyla enerji tüketimindeki fark %5'tir. Makalenin tüketim (ECR) tanımı aslında döngüseldir: paketin nominal enerjisinin gidilen mesafeye bölünmesidir, menzil formülü de bu yüzden gidilen mesafeyi geri verir.
+
+**FLC.** SC dolu olduğu sürece makalenin tepe akım azalması yeniden üretilir: ilk çevrimde −%26.3 (makale −%22.7). Uzun deşarjda ise azalma −%0.7'ye düşer. Nedeni, SC'nin ilk ~1070 s'de boşalması ve deşarjın geri kalanında ortalama $SoC_{SC}$'nin 0.05'te kalmasıdır (Şekil \ref{fig:x1}, mavi). RMS akım (−%9.3), sıcaklık (−%10.3) ve deşarj süresi (+%10.7) değişimleri makaleyle aynı yönde ve aynı mertebededir.
+
+**FRL.** Uzun deşarjda FRL, tepe akım, RMS ve $\Delta T$'de FLC'den biraz iyidir, yani sıralama makaleyle aynı yöndedir. Ancak farklar tohumlar arası standart sapmanın 0.5–1.3 katıdır ve anlamlı değildir. İlk çevrimde FRL, FLC'den 4 std'den fazla **kötüdür** (103.9 A ve 86.2 A). Öğrenilen politika, $SoC_{SC}$ *Low* olduğunda SC payını kısar. Bu SC'yi %15–30 bandında korur, ama korunan enerji tepe akımı karşılamak için kullanılmaz. E4'te dönüştürücü verimi 0.91–1.00 aralığında taranmıştır. HESS > sadece batarya sıralaması bütün noktalarda korunur, ama menzilde 10 noktanın 10'unda FLC ≥ FRL'dir. Makalenin FRL > FLC iddiası bu kurulumda yeniden üretilememiştir. Son olarak, rejenerasyonlu adil baseline'a (B1) göre FLC'nin deşarj süresi kazancı yalnızca +%3.3'tür. Makalenin raporladığı kazancın yaklaşık üçte ikisi SC'den değil, rejeneratif frenlemeden gelmektedir.
 
 ## Önerilen Yöntemin Sonuçları
 
-> **[9.5]** X1 eğitim çevrimi (Tablo 5, Şekil 4: `X1_summary.png`). X2 ablasyonlar A1–A5 (`X2_ablation.png`). X3 30 test çevrimi (Tablo 6, Şekil 5: `X3_generalization.png`, Wilcoxon p = 1.7e-6). X4 parametre duyarlılığı (`X4_sensitivity.png`). X5 ölçüm gürültüsü (`X5_noise.png`). K4/K5 kriter tablosu. Yönergedeki "Baseline / Geliştirilen / Değişim" biçiminde özet tablo.
+Tablo \ref{tab:main}, önerilen yöntemi referans FLC (baseline) ve crisp rakip C0 ile bütün deneylerde karşılaştırır.
+
+Table: Baseline (F0) ile önerilen yöntemlerin karşılaştırması. X1: eğitim çevrimi; X3: 30 görülmemiş çevrim; X4: tek parametrenin ±%20 bozulması; X5: ölçüm gürültüsü σ = 0.05. Son sütun S2'nin F0'a göre değişimidir. \label{tab:main}
+
+| Ölçüt | F0 (FLC) | C0 (crisp) | S1 | **S2** | S2 / F0 |
+|---|---:|---:|---:|---:|---:|
+| X1 tepe $I_B$ (A) | 136.2 | 57.1 | 73.2 | **60.8** | −%55.3 |
+| X1 RMS $I_B$ (A) | 43.6 | 35.9 | 37.2 | 36.0 | −%17.3 |
+| X1 $\Delta T$ (°C) | 1.88 | 1.15 | 1.27 | 1.18 | −%37.6 |
+| X1 deşarj süresi (s) | 7477 | 7308 | 7258 | 7255 | −%3.0 |
+| X1 en düşük $SoC_{SC}$ | 0.00 | 0.17 | 0.55 | 0.41 | – |
+| X3 tepe $I_B$ ort. / en kötü (A) | 136.9 / 137.2 | 93.6 / 137.1 | 75.9 / 88.6 | **61.1 / 71.5** | −%55.4 / −%47.9 |
+| X3 çöken çevrim | 30 / 30 | 14 / 30 | 0 / 30 | **0 / 30** | – |
+| X4 en büyük kötüleşme | – | +%137.6 | +%18.1 | **+%12.3** | – |
+| X5 tepe $I_B$ (σ = 0.05) | 136.2 | 71.7 | 81.1 | 71.6 | – |
+| Karar süresi (µs/adım) | 163 | 0.2 | 117 | 84 | −%48.7 |
+
+**X1: eğitim çevrimi.** Ayarlanan üç yöntem de K1–K3'ü sağlar. Tepe akım F0'a göre %46–58 düşer, RMS akım, $I^2t$ ve $\Delta T$ hem F0'dan hem R0'dan düşüktür. Deşarj süresi B1'den kısa değildir (+%0.3 ile +%1.0). Şekil \ref{fig:x1}, farkın kaynağını gösterir. S1 ve S2, SC'yi deşarj boyunca 0.4–0.7 bandında tutar ve tepe akımı yarıdan fazla düşürür. C0'da $SoC_{SC}$ zamanla aşağı kayar ve sonda 0.17'ye iner. Bu, eğitim çevriminde bile C0'ın SC rezervinin ince olduğunu gösterir. Bedel deşarj süresidir: S2, F0'dan %3 kısa sürer, çünkü bataryadan SC'ye aktarılan enerji iki kez dönüştürücüden geçer. Bu çevrimdeki en iyi değerde crisp kural S2'den biraz iyidir (57.1 ve 60.8 A).
+
+![X1, eğitim çevrimi. Sol: $SoC_{SC}$ seyri (60 s ortalama). Sağ: en yüksek 400 adımdaki batarya akımı, sıralı.](results/figures/X1_soc_current.png){#fig:x1 width=100%}
+
+**X2: ablasyonlar.** Yeniden şarj kaldırılınca (A1, $P_{ch} = 0$) SC iki yöntemde de boşalır ve tepe akım F0 seviyesine döner (S1'de 134.7 A, S2'de 137.0 A). Tablo 5'in kurallarına yalnızca $P_{ch}$ eklemek (A2) tepe akımı 89.4 A'ya indirir. S1'in yeni kuralları ise 73.2 A verir. Yani kazancın çoğu yeniden şarjdan, ~16 A'lık kısmı kural tabanından gelir. $SoC_B$ girdisinin eklenmesi (A3, 36 kural) tepe akımı 1–2 A düşürür ve süreyi %0.7–1 uzatır, ama SC rezervini azaltır. Bu küçük kazanç için kural sayısının üç katına çıkması gerekir. S2'de tavanı sabitlemek (A4) sonucu değiştirmez (59.7 A). S2'nin bulanık şarj yasasını C0'ın crisp şarj kuralıyla değiştirmek (A5) ise tepe akımı değiştirmez, ama en düşük $SoC_{SC}$'yi 0.41'den 0.23'e indirir.
+
+**X3: görülmemiş 30 çevrim.** Şekil \ref{fig:x3} ve Tablo \ref{tab:main} genelleme sonuçlarını verir. S2 hiçbir çevrimde çökmez, en kötü tepe akımı 71.5 A'dır. C0, 30 çevrimin 14'ünde çöker. Çöküşlerin dağılımı: sakin 0/10, nominal 4/10, agresif 10/10. Eğitim çevriminde ayarlanan eşik, daha zorlu sürüşte SC'yi koruyamaz. Eşleştirilmiş Wilcoxon testinde S2, 30 çevrimin 26'sında C0'dan daha düşük tepe akım verir (medyan fark −1.9 A, ortalama fark −32.5 A, $p = 1.7 \times 10^{-6}$). Fark tipik çevrimde küçük, C0'ın çöktüğü çevrimlerde büyüktür. S1 en kötü durumda C0'dan iyidir (88.6 A), ama tipik çevrimde daha kötüdür (medyan fark +9.4 A). Ablasyonlar X3'te de sınanmıştır. A1 ve A2, tam yöntemden anlamlı derecede kötüdür ($p = 1.9 \times 10^{-9}$). A5, 30 çevrimin 11'inde çöker ($p = 0.002$). A4 ile S2 arasında anlamlı fark yoktur (medyan −0.1 A, $p = 0.17$).
+
+![X3, 30 görülmemiş test çevrimi (her nokta bir çevrim, renkler rejimleri gösterir, siyah çizgi medyandır). Soldan sağa: tepe $I_B$, en düşük $SoC_{SC}$, B1'e göre deşarj süresi.](results/figures/X3_generalization.png){#fig:x3 width=100%}
+
+**X4 ve X5: duyarlılık ve gürültü.** Şekil \ref{fig:x4}'te her parametre tek tek bozulmuştur. C0'da eşik ya da şarj gücü yalnızca %10 düşünce SC boşalır. C0, 16 bozulmanın 7'sinde çöker ve en büyük kötüleşme +%138'dir. Bulanık sürümlerde kötüleşme düzgün ve sınırlıdır: S1'de en fazla %18, S2'de %12, hiçbir bozulmada çöküş yoktur. σ = 0.05 ölçüm gürültüsünde C0 ve S2'nin tepe akımı eşitlenir (~72 A). Fark SC rezervindedir: C0'da en düşük $SoC_{SC}$ 0.06'ya, yani çöküşün eşiğine iner, S2'de 0.40'ta kalır.
+
+![X4, eğitim çevrimi, tek parametre bozulması (içi boş halka: SC boşaldı). Soldan sağa: C0, S1, S2.](results/figures/X4_sensitivity.png){#fig:x4 width=100%}
+
+**Hipotezler.** S2 için K1–K4'ün hepsi sağlanır. S1 için K4'ün "tipik çevrimde crisp'ten iyi" koşulu sağlanmaz. K5'te yeniden şarjın (A1), kural tabanının (A2) ve bulanık şarj yasasının (A5) katkısı anlamlıdır. SoC'ye uyarlanan tavanın (A4) katkısı ise anlamlı değildir.
 
 # Discussion (Tartışma)
 
-> **[9.5]** Mekanizma: dayanıklılığı sağlayan bulanık şarj yasası (A5 ile crisp şarjda 11/30 çöküş). Uyarlamalı tavanın katkısının olmaması (A4, p = 0.17). C0 en iyi durumda daha iyi ama kırılgan. Süredeki küçük kayıp. FRL > FLC'nin neden yeniden üretilemediği.
+**Dayanıklılığın mekanizması bulanık şarj yasasıdır.** S2'yi C0'dan ayıran bileşen tepe kırpma yapısı değil, şarj kuralıdır. A4'te tavan sabitlenince sonuç değişmez. A5'te yalnızca şarj kuralı crisp yapılınca yöntem 11/30 çevrimde çöker. Crisp kural SC'yi yalnızca talep $P_{lo}$'nun altındayken ve sabit güçle şarj eder. Agresif sürüşte düşük talep anları azaldığı için şarj, SC'den çekilen enerjiyi karşılamaz. Bulanık kurallar ise talep *Medium* iken de SC boşsa şarja devam eder. Şarj gücü $SoC_{SC}$ düştükçe sürekli artar ve üyelik fonksiyonlarının örtüşmesi şarjı daha geniş bir durum bölgesine yayar. Böylece SC'nin doluluğunu bir banda çeken kendiliğinden bir geri besleme oluşur. Bu da ayardaki %10–20'lik hatalara ve görülmemiş sürüş rejimlerine karşı dayanıklılık sağlar. Bulanık mantığın bu problemdeki asıl değeri, en iyi durumda daha düşük akım vermesi değildir (eğitim çevriminde crisp kural biraz daha iyidir). Asıl değeri, enerji dengesini parametre ayarına bağımlı olmaktan çıkarmasıdır.
+
+**Olumsuz bulgu: uyarlamalı tavanın katkısı yoktur.** S2, crisp kuralın düz kırpma yapısını korumak ve tavanı $SoC_{SC}$'ye göre bulanık olarak ayarlamak için tasarlanmıştı. Ayar küçük bir yayılım seçmiştir ($d_{cap} = 192$ W) ve sabit tavanla (A4) fark yoktur. Doğru ifade şudur: S2'nin kazancı bulanık tavandan değil, kırpma yapısının bulanık şarj geri beslemesiyle birleşmesinden gelir.
+
+**Çıktı değişkeninin seçimi kurallardan daha önemlidir.** S1 ile S2'nin kuralları ve şarj yasası aynıdır, yalnızca birinci çıktı farklıdır. S1, talebin bir *yüzdesini* SC'ye verir. Bu yüzden yüksek talepte bataryanın payı da büyür ve tipik çevrimde S2'den 30/30, C0'dan medyanda 9.4 A kötüdür. S2'de batarya gücü bir tavanda kırpılır. Bulanık bir denetleyicide çıktı değişkeninin fiziksel anlamı, kural tabanı kadar belirleyicidir.
+
+**Ödünleşim.** Önerilen yöntem, tepe akımı F0'ın yarısının altına indirirken deşarj süresinde ~%3 kaybeder. F0'ın süre avantajı, SC'yi ilk 20 dakikada boşaltıp ondan sonra hiç kullanmamasından gelir. Bu, kısa bir ölçümde görünmeyen bir davranıştır. Adil baseline B1'e göre S2'nin süresi ortalamada +%0.13'tür, en kötü çevrimde −%0.45'tir. K3 bütün çevrimlerde sağlanır. Tepe akım ve $\Delta T$'deki büyük azalma, bataryanın yaşlanması için bu küçük kaybı karşılamaya değerdir. Ancak bu çalışmada yaşlanma doğrudan modellenmemiştir.
+
+**FRL > FLC neden yeniden üretilemedi?** Q-learning katmanı, kural tabanının yapısal sorununu (bataryadan SC şarjı olmaması) çözemez. Ödül fonksiyonu monoton değildir ve SC'nin durumunu içermez. Ajanın SC'yi koruması bu yüzden dolaylı bir yan etkidir ve kullanımdan vazgeçme pahasına gerçekleşir. Makale tek bir çalıştırma raporlar. FLC ile FRL arasındaki %1–4'lük farklar, bizim 5 tohumlu deneylerimizde tohumdan kaynaklanan değişkenlikten küçüktür. Makalenin donanımında, tam açıklanmamış bir "belirsizlik" geçiş mekanizmasıyla farklı bir sonuç elde edilmiş olabilir. Ancak bu raporlanan bilgilerle doğrulanamaz.
+
+**Hesaplama maliyeti.** Kural sayısının 36'dan 12'ye inmesiyle S2'nin karar süresi F0'ın yaklaşık yarısıdır (84 ve 163 µs, Python). Bütün denetleyiciler 1 s'lik kontrol adımının çok altında çalışır.
 
 # Limitations (Sınırlılıklar)
 
-> **[9.5]** Benzetim tabanlı (donanım yok); makalede eksik parametreler; sentetik sürüş çevrimleri; yaşlanma yalnızca vekil göstergelerle; K-FRL yapılmadı; tek araç modeli.
+- **Yalnızca benzetim.** Donanım testi yapılmamıştır. Dönüştürücüler sabit verimli, motor sabit verimli ve batarya basit bir $R_{int}$ modeliyle temsil edilmiştir.
+- **Makalede verilmeyen parametreler.** Araç kütlesi, yuvarlanma katsayısı, MF köşe noktaları, FRL eylem kümesi ve termal model tarafımızdan seçilmiştir. Sıcaklık tek bir senaryoya kalibre edildiği için yalnızca göreli olarak yorumlanmalıdır.
+- **Sentetik sürüş çevrimleri.** Gerçek sürüş verisi yoktur. Test çevrimleri eğitim çevrimiyle aynı üreteçten gelir ve aynı temel istatistiklere sahiptir. X3 bu nedenle aynı ailedeki çevrimlere genellemeyi ölçer. Eğim, farklı hız profilleri ve standart çevrimler (WMTC vb.) denenmemiştir.
+- **Yaşlanma.** Batarya yaşlanması doğrudan modellenmemiştir. Tepe akım, RMS, $I^2t$ ve $\Delta T$ yalnızca vekil göstergelerdir.
+- **Kapsam dışı kalanlar.** FRL, X3'te koşturulmamıştır, çünkü X1'de FLC'den ayırt edilemiyordu. Önerilen SCS-FLC'nin üzerine düzeltilmiş ödülle bir Q-learning katmanı (K-FRL) zaman nedeniyle eklenmemiştir. S1'in ayarında bazı en iyi noktalar arama aralığının sınırına yakındır, ancak bütçe eşitliğini bozmamak için aralıklar sonradan genişletilmemiştir.
 
 # Conclusion (Sonuç)
 
-> **[9.5]** Genel sonuçlar ve gelecek çalışmalar (K-FRL, Type-2 [23], gerçek sürüş verisi, donanım-döngüde test).
+Bu projede, E2W batarya/SC HESS'i için önerilen FRL tabanlı EMS [1] Python'da yeniden gerçekleştirilmiştir. Sadece-batarya baseline'ı makaleyle uyumludur. FLC'nin tepe akım azalması SC dolu olduğu sürece yeniden üretilmiştir. Bununla birlikte makalenin kural tabanının SC'yi uzun sürüşte boşalttığı, menzil kazancının yaklaşık üçte ikisinin rejenerasyondan geldiği ve FRL'nin FLC'ye üstünlüğünün istatistiksel olarak yeniden üretilemediği gösterilmiştir.
+
+Bu bulgulara dayanarak, iki girdili ve 12 kurallı bir Mamdani denetleyicisi (SCS-FLC) önerilmiştir. Bu denetleyici SC'yi bir güç tamponu olarak kullanır ve bataryadan bulanık bir yasayla yeniden şarj eder. Önerilen S2 varyantı, görülmemiş 30 çevrimde hiç çökmeden ortalama tepe batarya akımını F0'a göre %55, eşit bütçeyle ayarlanmış crisp kurala göre %35 düşürmüştür ($p = 1.7 \times 10^{-6}$). Parametre bozulmalarında en fazla %12 kötüleşmiştir (crisp kuralda %138). Ablasyonlar, dayanıklılığın kaynağının SoC'ye uyarlanan tavan değil, sürekli değişen bulanık şarj yasası olduğunu göstermiştir. Bedel, F0'a göre ~%3 daha kısa deşarj süresidir.
+
+**Gelecek çalışmalar:** SCS-FLC'nin üzerine monoton ve $SoC_{SC}$ terimi içeren bir ödülle Q-learning katmanı (K-FRL). Ölçüm belirsizliğini doğrudan modellemek için tip-2 bulanık kümeler [23]. Gerçek sürüş kayıtları ve standart çevrimlerle test. Elektrokimyasal bir yaşlanma modeli. Donanım-döngüde (HIL) doğrulama.
 
 # Generative AI Usage Disclosure (Üretken Yapay Zekâ Kullanım Beyanı) {.unnumbered}
 
-> **[9.5]** Kullanılan araç, amaçlar (kod geliştirme, hata ayıklama, literatür taramasına yardım, dil düzenleme) ve doğrulama yöntemi (testler, kaynakların DOI üzerinden kontrolü, sonuçların yeniden koşturulması).
+Bu projede üretken yapay zekâ aracı olarak Anthropic'in Claude modeli kullanılmıştır. Kullanım alanları şunlardır:
+
+- Python kodunun ve birim testlerinin yazılması, hata ayıklama.
+- Deney betiklerinin ve grafiklerin hazırlanması.
+- Literatür taramasında aday kaynakların bulunması.
+- Proje dokümanlarının ve bu raporun taslak metninin yazılması ve dil düzenlemesi.
+
+Proje adımları, araca her aşamada açık talimat verilerek ve her alt adımın sonucu incelenip onaylanarak yürütülmüştür. Tasarım kararları (varsayımlar, katkının seçimi, S2 varyantının eklenmesi) bu süreçte değerlendirilip onaylanmıştır. Doğrulama şöyle yapılmıştır:
+
+- Kodun doğruluğu 96 birim testiyle kontrol edilmiştir.
+- Bütün tablo ve grafikler repodaki betiklerle yeniden üretilmiştir.
+- Rapordaki sayılar `results/tables/` dosyalarıyla karşılaştırılmıştır.
+- Kaynakların her biri DOI veya yayıncı sayfası üzerinden doğrulanmıştır; doğrulanamayan künye bilgileri kaynakçaya alınmamıştır.
 
 # References (Kaynaklar) {.unnumbered}
 
-> **[9.5]** `references/README.md` §5'teki IEEE listesi, yalnızca metinde atıf yapılan kaynaklar.
+```{=latex}
+\small
+```
+
+\[1\] N. Kumaresan and A. Rammohan, "Fuzzy reinforcement learning-based energy management strategy for the integration of hybrid energy storage system of electric vehicle," *Results Eng.*, vol. 28, Art. no. 107875, 2025, doi: 10.1016/j.rineng.2025.107875.
+
+\[2\] R. Pan, J. Li, D. Yang, and Y. Yan, "A fuzzy RL-based energy management strategy for battery/supercapacitor hybrid energy storage system with road condition recognition," *IEEE Trans. Transp. Electrific.*, vol. 12, no. 2, pp. 2887–2898, Apr. 2026.
+
+\[3\] B. Xu, J. Shi, S. Li, H. Li, and Z. Wang, "Energy consumption and battery aging minimization using a Q-learning strategy for a battery/ultracapacitor electric vehicle," *Energy*, vol. 229, Art. no. 120705, 2021, doi: 10.1016/j.energy.2021.120705.
+
+\[4\] B. Xu, Q. Zhou, J. Shi, and S. Li, "Hierarchical Q-learning network for online simultaneous optimization of energy efficiency and battery life of the battery/ultracapacitor electric vehicle," *J. Energy Storage*, vol. 46, Art. no. 103925, 2022, doi: 10.1016/j.est.2021.103925.
+
+\[5\] L. Guo, Z. Li, and R. Outbib, "A lifetime extended energy management strategy for fuel cell hybrid electric vehicles via self-learning fuzzy reinforcement learning," in *Proc. 10th Int. Conf. Syst. Control (ICSC)*, Marseille, France, 2022, pp. 161–167, doi: 10.1109/ICSC57768.2022.9993916.
+
+\[6\] D. Yang, S. Wang, Y. Liao, and R. Pan, "An online energy management strategy for fuel cell vehicles based on fuzzy Q-learning and road condition recognition," *IEEE Trans. Intell. Transp. Syst.*, vol. 25, no. 9, Sep. 2024, doi: 10.1109/TITS.2024.3368149.
+
+\[7\] S. Ariche, Z. Boulghasoul, A. El Ouardi, A. Elbacha, A. Tajer, and S. Espié, "Enhancing energy management in battery electric vehicles: A novel approach based on fuzzy Q-learning controller," *Eng. Sci. Technol., Int. J.*, vol. 67, Jul. 2025, Art. no. 102070, doi: 10.1016/j.jestch.2025.102070.
+
+\[8\] R. Xiong, J. Cao, and Q. Yu, "Reinforcement learning-based real-time power management for hybrid energy storage system in the plug-in hybrid electric vehicle," *Appl. Energy*, vol. 211, pp. 538–548, 2018, doi: 10.1016/j.apenergy.2017.11.072.
+
+\[9\] Y. Wu *et al.*, "Driving style-aware energy management for battery/supercapacitor electric vehicles using deep reinforcement learning," *J. Energy Storage*, vol. 73, Art. no. 109199, 2023, doi: 10.1016/j.est.2023.109199.
+
+\[10\] W. Liu, P. Yao, Y. Wu, L. Duan, H. Li, and J. Peng, "Imitation reinforcement learning energy management for electric vehicles with hybrid energy storage system," *Appl. Energy*, vol. 378, Art. no. 124832, 2025, doi: 10.1016/j.apenergy.2024.124832.
+
+\[11\] M. Şen, M. Özcan, and Y. R. Eker, "Fuzzy logic-based energy management system for regenerative braking of electric vehicles with hybrid energy storage system," *Appl. Sci.*, vol. 14, no. 7, Art. no. 3077, 2024, doi: 10.3390/app14073077.
+
+\[12\] S. M. Rakhtala Rostami and Z. Al-Shibaany, "Intelligent energy management for full-active hybrid energy storage systems in electric vehicles using teaching–learning-based optimization in fuzzy logic algorithms," *IEEE Access*, vol. 12, pp. 67665–67680, 2024, doi: 10.1109/ACCESS.2024.3399111.
+
+\[13\] N. Kumaresan and A. Rammohan, "Adaptive neuro fuzzy inference system based optimized energy management strategy for the power integration of battery and supercapacitor in electric vehicle," *J. Energy Storage*, vol. 126, Art. no. 117073, 2025, doi: 10.1016/j.est.2025.117073.
+
+\[14\] X. Chen, M. Li, and Z. Chen, "Meta rule-based energy management strategy for battery/supercapacitor hybrid electric vehicles," *Energy*, vol. 285, Art. no. 129365, 2023, doi: 10.1016/j.energy.2023.129365.
+
+\[15\] M. Al Takrouri, N. R. N. Idris, M. J. A. Aziz, R. Ayop, and W. Y. Low, "Refined power follower strategy for enhancing the performance of hybrid energy storage systems in electric vehicles," *Results Eng.*, vol. 25, Art. no. 103960, 2025, doi: 10.1016/j.rineng.2025.103960.
+
+\[16\] A. Wangsupphaphol, S. Phichaisawat, N. R. N. Idris, A. Jusoh, N. D. Muhamad, and R. Lengkayan, "A systematic review of energy management systems for battery/supercapacitor electric vehicle applications," *Sustainability*, vol. 15, no. 14, Art. no. 11200, 2023, doi: 10.3390/su151411200.
+
+\[17\] L. A. Zadeh, "Fuzzy sets," *Inf. Control*, vol. 8, no. 3, pp. 338–353, 1965, doi: 10.1016/S0019-9958(65)90241-X.
+
+\[18\] E. H. Mamdani and S. Assilian, "An experiment in linguistic synthesis with a fuzzy logic controller," *Int. J. Man-Mach. Stud.*, vol. 7, no. 1, pp. 1–13, 1975, doi: 10.1016/S0020-7373(75)80002-2.
+
+\[19\] C. J. C. H. Watkins and P. Dayan, "Q-learning," *Mach. Learn.*, vol. 8, pp. 279–292, 1992, doi: 10.1007/BF00992698.
+
+\[20\] R. S. Sutton and A. G. Barto, *Reinforcement Learning: An Introduction*, 2nd ed. Cambridge, MA, USA: MIT Press, 2018.
+
+\[21\] P. Y. Glorennec and L. Jouffe, "Fuzzy Q-learning," in *Proc. 6th IEEE Int. Conf. Fuzzy Syst.*, 1997, pp. 659–662, doi: 10.1109/FUZZY.1997.622790.
+
+\[22\] L. Jouffe, "Fuzzy inference system learning by reinforcement methods," *IEEE Trans. Syst., Man, Cybern. C*, vol. 28, no. 3, pp. 338–355, 1998, doi: 10.1109/5326.704563.
+
+\[23\] J. M. Mendel and R. I. B. John, "Type-2 fuzzy sets made simple," *IEEE Trans. Fuzzy Syst.*, vol. 10, no. 2, pp. 117–127, 2002, doi: 10.1109/91.995115.
+
